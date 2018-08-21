@@ -1,0 +1,5 @@
+# IAR files
+*.dep
+*.ewd
+*.ewt
+settings/
