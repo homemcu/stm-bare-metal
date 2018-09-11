@@ -53,8 +53,9 @@
 #define GPIO_F                  5
 #define GPIO_G                  6
 #define GPIO_H                  7
-#define GPIO_J                  8
-#define GPIO_K                  9
+#define GPIO_I                  8
+#define GPIO_J                  9
+#define GPIO_K                  10
 
 // GPIOCFG macros
 #define GPIO_AF_BITS            4       // width of bit field
@@ -67,6 +68,7 @@
 #define GPIO_AF5_SPI1           5
 #define GPIO_AF5_SPI2           5
 #define GPIO_AF6_SPI3           6
+#define GPIO_AF7_USART1         7
 #define GPIO_AF11_ETH           11
 #define GPIO_AF12_FMC           12
 #define GPIO_AF12_SDMMC         12

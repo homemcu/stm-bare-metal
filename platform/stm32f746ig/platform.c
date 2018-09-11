@@ -13,7 +13,7 @@
 */
 
 #include "cpu.h"
-#include "stm32f4xx-hw.h"
+#include "stm32f7xx-hw.h"
 
 static volatile uint32_t counter = 0;
 
@@ -50,13 +50,13 @@ void delay_us(uint32_t delay_us)
 //--------------------------------------------
 // HSE crystal oscillator 8 MHz
 // Define HSE_VALUE=8000000 in Makefile(GCC ARM) or Preprocessor tab(IAR)
-// fHCLK = 168 MHz (AHB)
-// fPCLK1 = 42 MHz (APB1)
-// fPCLK2 = 84 MHz (APB2)
+// fHCLK =  216 MHz (AHB)
+// fPCLK1 =  54 MHz (APB1)
+// fPCLK2 = 108 MHz (APB2)
 #define PLL_M      8
-#define PLL_N      336
+#define PLL_N      432
 #define PLL_P      2
-#define PLL_Q      7
+#define PLL_Q      9
 static void SetSysClock(void)
 {
 	// HSE clock enable
@@ -66,8 +66,8 @@ static void SetSysClock(void)
 	// Power interface clock enable
 	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
 	// Scale 1 mode (default value at reset):
-	// the device does operate at the maximum frequency 168 MHz
-	PWR->CR |= PWR_CR_VOS;
+	// the device does operate at the maximum frequency 216 MHz
+	PWR->CR1 |= PWR_CR1_VOS;
 
 	// AHB = SYSCLK / 1
 	RCC->CFGR |= RCC_CFGR_HPRE_DIV1;
@@ -85,8 +85,8 @@ static void SetSysClock(void)
 	RCC->CR |= RCC_CR_PLLON;
 	while (!(RCC->CR & RCC_CR_PLLRDY));
 
-	// configure Flash prefetch, Instruction cache, Data cache and wait state
-	FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_LATENCY_5WS;
+	// configure Flash prefetch and wait state
+	FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_LATENCY_5WS;
 
 	// select the main PLL as system clock source
 	RCC->CFGR &= ~RCC_CFGR_SW;
@@ -98,6 +98,7 @@ static void SetSysClock(void)
 static void DWTInit(void)
 {
 	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	DWT->LAR = 0xC5ACCE55;
 	DWT->CYCCNT = 0;
 	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk; 
 }
@@ -109,44 +110,63 @@ static void DWTInit(void)
 #if UART_TERMINAL == 1
 
 //--------------------------------------------
-// GPIO_AF7_USART1(APB2, SYSCLK, HSI, LSE):
-// USART1 TX:  PA9    PB6
-// USART1 RX:  PA10   PB7
-// GPIO_AF7_USART2(APB1, SYSCLK, HSI, LSE):
-// USART2 TX:  PA2    PD5
-// USART2 RX:  PA3    PD6
-// GPIO_AF7_USART3(APB1, SYSCLK, HSI, LSE):
-// USART3 TX:  PB10   PC10   PD8
-// USART3 RX:  PB11   PC11   PD9
-// GPIO_AF8_UART4(APB1, SYSCLK, HSI, LSE):
-// UART4 TX:   PA0    PC10
-// UART4 RX:   PA1    PC11
-// GPIO_AF8_UART5(APB1, SYSCLK, HSI, LSE):
-// UART5 TX:   PC12
-// UART5 RX:   PD2
-// GPIO_AF8_USART6(APB2, SYSCLK, HSI, LSE):
-// USART6 TX:  PC6    PG14
-// USART6 RX:  PC7    PG9
-// GPIO_AF8_UART7(APB1, SYSCLK, HSI, LSE):
-// UART7 TX:   PE8    PF7
-// UART7 RX:   PE7    PF6
-// GPIO_AF8_UART8(APB1, SYSCLK, HSI, LSE):
-// UART8 TX:   PE1
-// UART8 RX:   PE0
+// USART1(APB2, SYSCLK, HSI, LSE)
+// GPIO_AF7_USART1
+// TX:  PA9    PB6
+// RX:  PA10   PB7
+//
+// USART2(APB1, SYSCLK, HSI, LSE)
+// GPIO_AF7_USART2
+// TX:  PA2    PD5
+// RX:  PA3    PD6
+//
+// USART3(APB1, SYSCLK, HSI, LSE)
+// GPIO_AF7_USART3
+// TX:  PB10   PC10   PD8
+// RX:  PB11   PC11   PD9
+//
+// UART4(APB1, SYSCLK, HSI, LSE)
+// GPIO_AF8_UART4
+// TX:   PA0    PC10
+// RX:   PA1    PC11
+//
+// UART5(APB1, SYSCLK, HSI, LSE)
+// GPIO_AF8_UART5
+// TX:   PC12
+// RX:   PD2
+//
+// USART6(APB2, SYSCLK, HSI, LSE)
+// GPIO_AF8_USART6
+// TX:  PC6    PG14
+// RX:  PC7    PG9
+//
+// UART7(APB1, SYSCLK, HSI, LSE)
+// GPIO_AF8_UART7
+// TX:   PE8    PF7
+// RX:   PE7    PF6
+//
+// UART8(APB1, SYSCLK, HSI, LSE)
+// GPIO_AF8_UART8
+// TX:   PE1
+// RX:   PE0
+//
+// The first clock source in the brackets
+// is selected as U(S)ART clock by default,
+// see RCC->DCKCFGR2 register
 
-#define	PORT_TX        GPIO_A   // PA9  --> RXD
+#define	PORT_TX        GPIO_A   // PA9  --> RXD (Remove USB.P3 jumper!)
 #define	PIN_TX         9
 #define	PORT_RX        GPIO_A   // PA10 <-- TXD
 #define	PIN_RX         10
+
 //--------------------------------------------
 // USART Baud rate
-// USARTDIV = PCLK2(84MHz) / 8 x (2 - OVER8) x Baud
-// if OVER8 = 0 (4-bit USARTDIV_Fraction), Baud = 115200
-// USARTDIV = PCLK2(84MHz) / 8 x 2 x 115200 ~= 45.573
-// USARTDIV_Mantissa = 45
-#define USART1_DIV_M       45
-// USARTDIV_Fraction = 0.573 / (1 / 16) = 0.573 / 0.0625 ~= 9
-#define USART1_DIV_F       9
+// USARTDIV = PCLK2(108MHz) * N / Baud
+// N = 1 if OVER8 = 0 (Oversampling by 16)
+// N = 2 if OVER8 = 1 (Oversampling by 8)
+// if OVER8 = 0 (Oversampling by 16), Baud = 115200
+// USARTDIV = PCLK2(108MHz) * 1 / 115200 = 937.5 ~= 0x3A9
+#define USART1_DIV       0x3A9
 
 //--------------------------------------------
 static void UART1Init(void)
@@ -159,19 +179,19 @@ static void UART1Init(void)
 	hw_cfg_pin(GPIOx(PORT_TX), PIN_TX, GPIOCFG_MODE_ALT | GPIO_AF7_USART1 | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_PUP);
 	hw_cfg_pin(GPIOx(PORT_RX), PIN_RX, GPIOCFG_MODE_ALT | GPIO_AF7_USART1 | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_PUP);
 
-	USART1->BRR = (USART1_DIV_M << 4) | USART1_DIV_F;
+	USART1->BRR = USART1_DIV;
 	// OVER8 = 0: oversampling by 16
 	// TE = 1: Transmitter is enabled
 	// RE = 1: Receiver is enabled and begins searching for a start bit
-	// UE = 1: USART enable
+	// UE = 1: USART enabled
 	USART1->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
 }
 
 //--------------------------------------------
 void putcharuart(char ch)
 {
-	while (!(USART1->SR & USART_SR_TXE));
-	USART1->DR = ch;
+	while (!(USART1->ISR & USART_ISR_TXE));
+	USART1->TDR = ch;
 }
 
 //--------------------------------------------
@@ -179,8 +199,8 @@ char getcharuart(void)
 {
 	char ch;
 
-	while (!(USART1->SR & USART_SR_RXNE));
-	ch = USART1->DR;
+	while (!(USART1->ISR & USART_ISR_RXNE));
+	ch = USART1->RDR;
 	return ch;
 }
 #endif
