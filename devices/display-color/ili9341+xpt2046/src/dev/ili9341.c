@@ -26,6 +26,7 @@ static void ili9341_command(uint8_t cmd)
 {
 	hal_ili9341_command();
 	hal_ili9341_tx(cmd);
+	hal_ili9341_tx_complete();
 }
 
 //--------------------------------------------
@@ -34,6 +35,7 @@ static void ili9341_setpixelformat(color_scr_mode_t mode)
 	scr_mode = mode;
 	hal_ili9341_command();
 	hal_ili9341_tx(ILI9341_COLMOD);
+	hal_ili9341_tx_complete();
 	hal_ili9341_data();
 	switch (scr_mode)
 	{
@@ -52,12 +54,14 @@ static void ili9341_setpixelformat(color_scr_mode_t mode)
 #endif
 		break;
 	}
+	hal_ili9341_tx_complete();
 }
 
 //--------------------------------------------
 void ili9341_init(color_scr_mode_t mode)
 {
 	hal_ili9341_init();
+	hal_ili9341_reset();
 	hal_ili9341_select();
 
 	ili9341_command(ILI9341_SLPOUT);
@@ -74,6 +78,7 @@ void ili9341_setorientation(scr_orient_t orientation)
 
 	hal_ili9341_command();
 	hal_ili9341_tx(ILI9341_MADCTL);
+	hal_ili9341_tx_complete();
 	hal_ili9341_data();
 	switch (orientation)
 	{
@@ -98,7 +103,7 @@ void ili9341_setorientation(scr_orient_t orientation)
 		hal_ili9341_tx(ILI9341_MADCTL_MX | ILI9341_MADCTL_MV | ILI9341_MADCTL_MY | ILI9341_MADCTL_BGR);
 		break;
 	}
-
+	hal_ili9341_tx_complete();
 	hal_ili9341_release();
 }
 
@@ -114,6 +119,7 @@ void ili9341_setboundrect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 	hal_ili9341_tx(x2 >> 8);
 	hal_ili9341_tx(x2 & 0xFF);
 
+	hal_ili9341_tx_complete();
 	ili9341_command(ILI9341_RASET);
 	hal_ili9341_data();
 	hal_ili9341_tx(y1 >> 8);
@@ -121,6 +127,7 @@ void ili9341_setboundrect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 	hal_ili9341_tx(y2 >> 8);
 	hal_ili9341_tx(y2 & 0xFF);
 
+	hal_ili9341_tx_complete();
 	hal_ili9341_release();
 }
 
@@ -135,6 +142,8 @@ void ili9341_startmemorywrite(void)
 //--------------------------------------------
 void ili9341_stopmemorywrite(void)
 {
+	hal_ili9341_tx_complete();
+	delay_us(100);
 	hal_ili9341_release();
 }
 

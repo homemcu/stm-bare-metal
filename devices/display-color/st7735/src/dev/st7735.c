@@ -26,6 +26,7 @@ static void st7735_command(uint8_t cmd)
 {
 	hal_st7735_command();
 	hal_st7735_tx(cmd);
+	hal_st7735_tx_complete();
 }
 
 //--------------------------------------------
@@ -34,6 +35,7 @@ static void st7735_setpixelformat(color_scr_mode_t mode)
 	scr_mode = mode;
 	hal_st7735_command();
 	hal_st7735_tx(ST7735_COLMOD);
+	hal_st7735_tx_complete();
 	hal_st7735_data();
 	switch (scr_mode)
 	{
@@ -47,6 +49,7 @@ static void st7735_setpixelformat(color_scr_mode_t mode)
 		hal_st7735_tx(ST7735_COLMOD_18BIT);
 		break;
 	}
+	hal_st7735_tx_complete();
 }
 
 //--------------------------------------------
@@ -69,6 +72,7 @@ void st7735_setorientation(scr_orient_t orientation)
 
 	hal_st7735_command();
 	hal_st7735_tx(ST7735_MADCTL);
+	hal_st7735_tx_complete();
 	hal_st7735_data();
 	switch (orientation)
 	{
@@ -93,7 +97,7 @@ void st7735_setorientation(scr_orient_t orientation)
 		hal_st7735_tx(ST7735_MADCTL_MV | ST7735_MADCTL_MY | ST7735_MADCTL_RGB);
 		break;
 	}
-
+	hal_st7735_tx_complete();
 	hal_st7735_release();
 }
 
@@ -109,6 +113,7 @@ void st7735_setboundrect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 	hal_st7735_tx(x2 >> 8);
 	hal_st7735_tx(x2 & 0xFF);
 
+	hal_st7735_tx_complete();
 	st7735_command(ST7735_RASET);
 	hal_st7735_data();
 	hal_st7735_tx(y1 >> 8);
@@ -116,6 +121,7 @@ void st7735_setboundrect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 	hal_st7735_tx(y2 >> 8);
 	hal_st7735_tx(y2 & 0xFF);
 
+	hal_st7735_tx_complete();
 	hal_st7735_release();
 }
 
@@ -130,6 +136,8 @@ void st7735_startmemorywrite(void)
 //--------------------------------------------
 void st7735_stopmemorywrite(void)
 {
+	hal_st7735_tx_complete();
+	delay_us(100);
 	hal_st7735_release();
 }
 

@@ -56,6 +56,10 @@ void hal_st7735_init(void)
 	// SPI1 clock enable
 	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
+	// Set first to prevent glitches
+	hw_set_pin(GPIOx(PORT_CS), PIN_CS, 1);        // CS = 1
+	hw_set_pin(GPIOx(PORT_RESET), PIN_RESET, 1);  // RST = 1
+
 	hw_cfg_pin(GPIOx(PORT_SCK),    PIN_SCK,    GPIOCFG_MODE_ALT | GPIO_AF5_SPI1 | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_PUP);
 	hw_cfg_pin(GPIOx(PORT_MOSI),   PIN_MOSI,   GPIOCFG_MODE_ALT | GPIO_AF5_SPI1 | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_PUP);
 	hw_cfg_pin(GPIOx(PORT_RESET),  PIN_RESET,  GPIOCFG_MODE_OUT | GPIOCFG_OSPEED_VHIGH  | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_PUP);
@@ -70,11 +74,11 @@ void hal_st7735_init(void)
 	// BR[2:0]: Baud rate control
 	// MSTR = 1: Master configuration
 	SPI1->CR1 = SPI_CR1_BIDIMODE | SPI_CR1_BIDIOE | SPI_CR1_SSM | SPI_CR1_SSI | SPI_CR1_SPE | SPI_CLK_DIV | SPI_CR1_MSTR;
+}
 
-	hw_set_pin(GPIOx(PORT_CS), PIN_CS, 1);        // CS = 1
-	hw_set_pin(GPIOx(PORT_RESET), PIN_RESET, 1);  // RST = 1
-	delay_ms(1);
-
+//--------------------------------------------
+void hal_st7735_reset(void)
+{
 	hw_set_pin(GPIOx(PORT_RESET), PIN_RESET, 0);  // RST = 0
 	delay_ms(1);
 	hw_set_pin(GPIOx(PORT_RESET), PIN_RESET, 1);  // RST = 1
@@ -108,17 +112,13 @@ void hal_st7735_data(void)
 //--------------------------------------------
 void hal_st7735_tx(uint8_t data)
 {
+	while (!(SPI1->SR & SPI_SR_TXE));
 	SPI1->DR = data;
-	// TODO:
-	// Most likely the issue is in the PIN_CS = 1 
-	// before the physical end of the SPI transfer.
-#if 1
-	// doesn't work as expected
+}
+
+//--------------------------------------------
+void hal_st7735_tx_complete(void)
+{
 	while (!(SPI1->SR & SPI_SR_TXE));
 	while ((SPI1->SR & SPI_SR_BSY));
-#else
-	while (!(SPI1->SR & SPI_SR_TXE));
-	// it's needed additional small timeout
-	for (volatile int cnt = 0; cnt < 20; cnt++);
-#endif
 }

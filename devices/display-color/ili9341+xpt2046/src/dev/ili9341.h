@@ -24,4 +24,11 @@ void ili9341_memorywrite(uint32_t color);
 uint16_t ili9341_getwidth(void);
 uint16_t ili9341_getheight(void);
 
+#ifdef ILI9341_8080I
+#define ili9341_getdataaddr hal_ili9341_get_data_addr
+#endif
+#ifdef ILI9341_SPI
+#define ili9341_getdataaddr (void *)0
+#endif
+
 #endif // ILI9341_H_

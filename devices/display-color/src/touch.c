@@ -29,6 +29,7 @@ void scr_init(void)
 {
 	color_scr_init(RGB565);
 	color_scr_setorientation(SCR_ORIENT_270);
+	delay_ms(25);
 	color_scr_fillscreen(RGB565_WHITE);
 	color_scr_printstring("Please click the cross:", 10, 10, RGB565_BLUE, RGB565_WHITE, font_8x8);
 }
@@ -264,6 +265,7 @@ void touch_loop(void)
 	for (;;)
 	{
 		color_scr_setorientation(orient);
+		delay_ms(25);
 		color_scr_fillscreen(RGB565_WHITE);
 		color_scr_printstring("Draw on me, please", 10, 10, color, RGB565_WHITE, font_8x8);
 		for (now_ms = get_platform_counter(), end_ms = now_ms + 5000; end_ms > now_ms; now_ms = get_platform_counter())

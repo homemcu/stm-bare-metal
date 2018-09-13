@@ -39,14 +39,18 @@ void hal_ili9341_init(void)
 	// MSTR = 1: Master configuration
 	SPI_CR1 = (1 << SPI_CR1_SPE) | SPI_CLK_DIV | (1 << SPI_CR1_MSTR);
 
+	// Set first to prevent glitches
+	PG_ODR |= (1 << PIN_CS);     // CS = 1
+	PG_ODR |= (1 << PIN_RESET);  // RST = 1
+
 	PG_DDR |= (1 << PIN_RESET) | (1 << PIN_CS) | (1 << PIN_DC);
 	PG_CR1 |= (1 << PIN_RESET) | (1 << PIN_CS) | (1 << PIN_DC);
 	PG_CR2 |= (1 << PIN_RESET) | (1 << PIN_CS) | (1 << PIN_DC);
+}
 
-	PG_ODR |= (1 << PIN_CS);     // CS = 1
-	PG_ODR |= (1 << PIN_RESET);  // RST = 1
-	delay_ms(1);
-
+//--------------------------------------------
+void hal_ili9341_reset(void)
+{
 	PG_ODR &= ~(1 << PIN_RESET); // RST = 0
 	delay_ms(1);
 	PG_ODR |= (1 << PIN_RESET);  // RST = 1
@@ -80,6 +84,12 @@ void hal_ili9341_data(void)
 //--------------------------------------------
 void hal_ili9341_tx(uint8_t data)
 {
-	SPI_DR = data;
 	while (!(SPI_SR & (1 << SPI_SR_TXE)));
+	SPI_DR = data;
+}
+
+//--------------------------------------------
+void hal_ili9341_tx_complete(void)
+{
+	while ((SPI_SR & (1 << SPI_SR_BSY)));
 }

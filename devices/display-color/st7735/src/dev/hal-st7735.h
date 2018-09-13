@@ -16,10 +16,12 @@
 #define HAL_ST7735_H_
 
 void hal_st7735_init(void);
+void hal_st7735_reset(void);
 void hal_st7735_select(void);
 void hal_st7735_release(void);
 void hal_st7735_command(void);
 void hal_st7735_data(void);
 void hal_st7735_tx(uint8_t data);
+void hal_st7735_tx_complete(void);
 
 #endif // HAL_ST7735_H_

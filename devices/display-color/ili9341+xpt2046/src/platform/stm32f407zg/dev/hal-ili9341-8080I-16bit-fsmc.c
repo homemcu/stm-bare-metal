@@ -128,15 +128,29 @@ void hal_ili9341_init(void)
 	// CBURSTRW = 0
 	FSMC_BCR = FSMC_BCR4_MBKEN | FSMC_BCR4_MTYP_1 | FSMC_BCR4_MWID_0 | FSMC_BCR4_FACCEN | FSMC_BCR4_WREN;
 
+#if 1 /* CPU */
 	// FSMC_BTR:
 	// 1 x HCLK ~= 6 ns (168MHz)
 	// 18.3.1 Display Parallel 18/16/9/8-bit Interface Timing Characteristics (8080-I system):
 	// Address setup time - 0 ns
 	// ADDSET = 0000: 0 x HCLK clock cycle
-	// Write Control pulse L duration - 15 ns
+	// Write Control pulse L duration - 24 ns
 	// DATAST = 00000100: 4 x HCLK clock cycle
-	// ACCMOD = 01
-	FSMC_BTR = FSMC_BTR4_DATAST_2 | FSMC_BTR4_ACCMOD_0;
+	// ACCMOD = 00: irrelevant
+	FSMC_BTR = FSMC_BTR4_DATAST_2;
+#endif
+
+#if 0 /* DMA */
+	// FSMC_BTR:
+	// 1 x HCLK ~= 6 ns (168MHz)
+	// 18.3.1 Display Parallel 18/16/9/8-bit Interface Timing Characteristics (8080-I system):
+	// Address setup time - 12 ns
+	// ADDSET = 0010: 2 x HCLK clock cycle
+	// Write Control pulse L duration - 96 ns
+	// DATAST = 00010000: 16 x HCLK clock cycle
+	// ACCMOD = 00: irrelevant
+	FSMC_BTR = FSMC_BTR4_DATAST_4 | FSMC_BTR4_ADDSET_1;
+#endif
 
 	// FSMC_BWTR: irrelevant
 }
@@ -158,3 +172,102 @@ void hal_ili9341_tx(uint16_t data)
 {
 	*addr = data;
 }
+
+//--------------------------------------------
+void *hal_ili9341_get_data_addr(void)
+{
+	return (void *)ADDR_DATA;
+}
+
+//--------------------------------------------
+void hal_ili9341_init_dma(void)
+{
+	// DMA2 clock enable
+	RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+
+	// DMA stream disabled
+	DMA2_Stream0->CR &= ~DMA_SxCR_EN;
+	while (DMA2_Stream0->CR & DMA_SxCR_EN);
+
+	DMA2_Stream0->CR =  DMA_SxCR_CHSEL_0  | // Channel selection: (001) channel 1
+	                    DMA_SxCR_MBURST_0 | // Memory burst transfer configuration: (01) INCR4
+	                    DMA_SxCR_PBURST_0 | // Peripheral burst transfer configuration: (01) INCR4
+	                                        // Current target: (0) ignored
+	                                        // Double buffer mode: (0) No buffer switching at the end of transfer
+	                    DMA_SxCR_PL_0 | DMA_SxCR_PL_1 | // Priority level: (11) Very high
+	                                        // Peripheral increment offset size: (0) ignored
+	                    DMA_SxCR_MSIZE_0  | // Memory data size: (01) 16-bit
+	                    DMA_SxCR_PSIZE_0  | // Peripheral data size: (01) 16-bit
+	                                        // Memory increment mode: (0) Memory address pointer is fixed
+	                    DMA_SxCR_PINC     | // Peripheral increment mode: (1) Peripheral address pointer is incremented after each data transfer
+	                                        // Circular mode: (0) disabled
+	                    DMA_SxCR_DIR_1      // Data transfer direction: (10) Memory-to-memory
+	                                      ; // Peripheral flow controller: (0) The DMA is the flow controller
+
+	DMA2_Stream0->FCR =                     // FIFO error interrupt: (0) disabled
+	                                        // FIFO status: These bits are read-only
+	                    DMA_SxFCR_DMDIS   | // Direct mode: (1) disable
+	                    DMA_SxFCR_FTH_0 | DMA_SxFCR_FTH_1; // FIFO threshold selection: (11) full FIFO
+
+#if 0
+	// set dcmi dma global interrupt priority
+	NVIC_SetPriority(DMA2_Stream0_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), DMA_FMC_IRQ_PREEMPT_PRIORITY, 0));
+	// enable dcmi dma global interrupt
+	NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+#endif
+}
+
+//--------------------------------------------
+void hal_ili9341_write_dma(uint8_t *txbuf, uint32_t length)
+{
+	// DMA stream disabled
+	DMA2_Stream0->CR &= ~DMA_SxCR_EN;
+	while (DMA2_Stream0->CR & DMA_SxCR_EN);
+
+	// Clear all the interrupt flags
+	DMA2->LIFCR = DMA_LIFCR_CTCIF0 | DMA_LIFCR_CTEIF0 | DMA_LIFCR_CDMEIF0 | DMA_LIFCR_CFEIF0 | DMA_LIFCR_CHTIF0;
+
+	// Set the DMA addresses
+	DMA2_Stream0->PAR = (uint32_t)txbuf;
+	DMA2_Stream0->M0AR = (uint32_t)ADDR_DATA;
+
+	DMA2_Stream0->NDTR = length / sizeof(uint16_t);
+
+	// Enable interrupts
+	DMA2_Stream0->CR |= DMA_SxCR_TCIE | DMA_SxCR_TEIE | DMA_SxCR_HTIE;
+	DMA2_Stream0->FCR |= DMA_SxFCR_FEIE;
+
+	// DMA stream enabled
+	DMA2_Stream0->CR |= DMA_SxCR_EN;
+	while (!(DMA2_Stream0->CR & DMA_SxCR_EN));
+
+	while ((DMA2_Stream0->CR & DMA_SxCR_EN));
+}
+
+#if 0
+//--------------------------------------------
+void DMA2_Stream0_IRQHandler(void)
+{
+	if (DMA2->LISR & DMA_LISR_TCIF0)
+	{
+		DMA2->LIFCR |= DMA_LIFCR_CTCIF0;
+	}
+	if (DMA2->LISR & DMA_LISR_HTIF0)
+	{
+		DMA2->LIFCR |= DMA_LIFCR_CHTIF0;
+	}
+	if (DMA2->LISR & DMA_LISR_TEIF0)
+	{
+		DMA2->LIFCR |= DMA_LIFCR_CTEIF0;
+	}
+	if (DMA2->LISR & DMA_LISR_DMEIF0)
+	{
+		DMA2->LIFCR |= DMA_LIFCR_CDMEIF0;
+	}
+	if (DMA2->LISR & DMA_LISR_FEIF0)
+	{
+		DMA2->LIFCR |= DMA_LIFCR_CFEIF0;
+	}
+}
+#endif
+
