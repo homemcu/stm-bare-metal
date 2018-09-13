@@ -8,6 +8,9 @@
 
 #define DECLARE_ALIGNED_4(x) x __attribute__((aligned(4)))
 
+#define FLASH_MEMORY_DECLARE(type, name) type const name
+#define FLASH_MEMORY_READ_BYTE(byte) *(byte)
+
 //-----------------------------------------------------------------------------
 // IAR STM32
 // http://www.iar.com
