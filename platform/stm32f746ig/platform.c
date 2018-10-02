@@ -112,18 +112,18 @@ static void DWTInit(void)
 //--------------------------------------------
 // USART1(APB2, SYSCLK, HSI, LSE)
 // GPIO_AF7_USART1
-// TX:  PA9    PB6
-// RX:  PA10   PB7
+// TX:   PA9    PB6
+// RX:   PA10   PB7
 //
 // USART2(APB1, SYSCLK, HSI, LSE)
 // GPIO_AF7_USART2
-// TX:  PA2    PD5
-// RX:  PA3    PD6
+// TX:   PA2    PD5
+// RX:   PA3    PD6
 //
 // USART3(APB1, SYSCLK, HSI, LSE)
 // GPIO_AF7_USART3
-// TX:  PB10   PC10   PD8
-// RX:  PB11   PC11   PD9
+// TX:   PB10   PC10   PD8
+// RX:   PB11   PC11   PD9
 //
 // UART4(APB1, SYSCLK, HSI, LSE)
 // GPIO_AF8_UART4
@@ -137,8 +137,8 @@ static void DWTInit(void)
 //
 // USART6(APB2, SYSCLK, HSI, LSE)
 // GPIO_AF8_USART6
-// TX:  PC6    PG14
-// RX:  PC7    PG9
+// TX:   PC6    PG14
+// RX:   PC7    PG9
 //
 // UART7(APB1, SYSCLK, HSI, LSE)
 // GPIO_AF8_UART7
@@ -224,7 +224,6 @@ int getchar(void)
 //--------------------------------------------
 void platform_init(void)
 {
-	SystemInit();
 	SetSysClock();
 	SystemCoreClockUpdate();
 	SysTick_Config(SystemCoreClock / 1000);

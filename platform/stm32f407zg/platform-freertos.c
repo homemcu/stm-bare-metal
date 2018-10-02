@@ -168,7 +168,6 @@ int getchar(void)
 //--------------------------------------------
 void platform_init(void)
 {
-	SystemInit();
 	SetSysClock();
 	SystemCoreClockUpdate();
 	DWTInit();

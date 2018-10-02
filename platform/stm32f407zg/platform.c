@@ -204,7 +204,6 @@ int getchar(void)
 //--------------------------------------------
 void platform_init(void)
 {
-	SystemInit();
 	SetSysClock();
 	SystemCoreClockUpdate();
 	SysTick_Config(SystemCoreClock / 1000);
