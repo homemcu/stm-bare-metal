@@ -107,8 +107,6 @@ static void DWTInit(void)
 
 //--------------------------------------------
 #ifdef UART_TERMINAL
-#if UART_TERMINAL == 1
-
 //--------------------------------------------
 // USART1(APB2, SYSCLK, HSI, LSE)
 // GPIO_AF7_USART1
@@ -154,6 +152,8 @@ static void DWTInit(void)
 // is selected as U(S)ART clock by default,
 // see RCC->DCKCFGR2 register
 
+//--------------------------------------------
+#if UART_TERMINAL == 1
 #define	PORT_TX        GPIO_A   // PA9  --> RXD (Remove USB.P3 jumper!)
 #define	PIN_TX         9
 #define	PORT_RX        GPIO_A   // PA10 <-- TXD
@@ -203,8 +203,59 @@ char getcharuart(void)
 	ch = USART1->RDR;
 	return ch;
 }
-#endif
 
+//--------------------------------------------
+#elif UART_TERMINAL == 7
+#define	PORT_TX        GPIO_F   // PF7  --> RXD
+#define	PIN_TX         7
+#define	PORT_RX        GPIO_F   // PF6  <-- TXD
+#define	PIN_RX         6
+
+//--------------------------------------------
+// USART Baud rate
+// USARTDIV = PCLK1(108MHz) * N / Baud
+// N = 1 if OVER8 = 0 (Oversampling by 16)
+// N = 2 if OVER8 = 1 (Oversampling by 8)
+// if OVER8 = 0 (Oversampling by 16), Baud = 115200
+// USARTDIV = PCLK1(54MHz) * 1 / 115200 = 468.75 ~= 0x1D5
+#define UART7_DIV       0x1D5
+
+//--------------------------------------------
+static void UART7Init(void)
+{
+	// UART7 clock enable
+	RCC->APB1ENR |= RCC_APB1ENR_UART7EN;
+	// IO port F clock enable
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOFEN;
+
+	hw_cfg_pin(GPIOx(PORT_TX), PIN_TX, GPIOCFG_MODE_ALT | GPIO_AF8_UART7 | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_PUP);
+	hw_cfg_pin(GPIOx(PORT_RX), PIN_RX, GPIOCFG_MODE_ALT | GPIO_AF8_UART7 | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_PUP);
+
+	UART7->BRR = UART7_DIV;
+	// OVER8 = 0: oversampling by 16
+	// TE = 1: Transmitter is enabled
+	// RE = 1: Receiver is enabled and begins searching for a start bit
+	// UE = 1: USART enabled
+	UART7->CR1 = USART_CR1_TE | USART_CR1_RE | USART_CR1_UE;
+}
+
+//--------------------------------------------
+void putcharuart(char ch)
+{
+	while (!(UART7->ISR & USART_ISR_TXE));
+	UART7->TDR = ch;
+}
+
+//--------------------------------------------
+char getcharuart(void)
+{
+	char ch;
+
+	while (!(UART7->ISR & USART_ISR_RXNE));
+	ch = UART7->RDR;
+	return ch;
+}
+#endif
 //--------------------------------------------
 int putchar(int data)
 {
@@ -231,6 +282,8 @@ void platform_init(void)
 #ifdef UART_TERMINAL
 #if UART_TERMINAL == 1
 	UART1Init();
+#elif UART_TERMINAL == 7
+	UART7Init();
 #endif
 #endif
 }

@@ -22,12 +22,12 @@ Projects structure:
 | ../../internal | | internal | |
 | ../../pcf8563 | I2C | | |
 | ../sd-card/ | | | |
-| ../../sd-card | SPI | SPI, SDIO | |
+| ../../sd-card | SPI | SPI, SDIO | SPI, SDMMC |
 | ../spi-flash/ | | | |
 | ../../w25q | SPI(1) | SPI | |
 | apps/ | | | |
 | ../file-system/ | | | |
-| ../../fatfs+sd-card | SPI(2) | SPI, SDIO | |
+| ../../fatfs+sd-card | SPI(2) | SPI, SDIO | SPI, SDMMC |
 | ../../spiffs+spi-flash | SPI | SPI | |
 | ../network/ | | | |
 | ../../ethernet-lwip | | RMII | |
