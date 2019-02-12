@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018, 2019 Vladimir Alemasov
+* Copyright (c) 2019 Vladimir Alemasov
 * All rights reserved
 *
 * This program and the accompanying materials are distributed under 
@@ -12,15 +12,8 @@
 * GNU General Public License for more details.
 */
 
-#ifndef PLATFORM_H_
-#define PLATFORM_H_
+#ifndef PROJECT_CONF_H_
+#define PROJECT_CONF_H_
 
-#include "cpu.h"
-#include "project-conf.h"
+#endif /* PROJECT_CONF_H_ */
 
-void platform_init(void);
-void delay_ms(uint32_t delay_ms);
-void delay_us(uint32_t delay_us);
-uint32_t get_platform_counter(void);
-
-#endif // PLATFORM_H_
