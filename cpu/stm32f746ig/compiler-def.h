@@ -11,6 +11,10 @@
 #define FLASH_MEMORY_DECLARE(type, name) type const name
 #define FLASH_MEMORY_READ_BYTE(byte) *(byte)
 
+#ifndef __packed
+#define __packed __attribute__((__packed__))
+#endif
+
 //-----------------------------------------------------------------------------
 // IAR STM32
 // http://www.iar.com
@@ -20,6 +24,11 @@
 
 #define FLASH_MEMORY_DECLARE(type, name) type const name
 #define FLASH_MEMORY_READ_BYTE(byte) *(byte)
+
+#if __VER__ <= 7080003
+// In IAR EW ARM version 7.80 and earlier, the size of wchar_t is two bytes.
+#define u L
+#endif
 
 #else
 #error "Unsupported compiler."

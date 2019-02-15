@@ -41,12 +41,14 @@
 // see RCC->DCKCFGR2 register
 
 //--------------------------------------------
-#define	PORT_SCL        GPIO_B   // PB8 --> SCL
-#define	PIN_SCL         8
-#define	PORT_SDA        GPIO_B   // PB9 <-> SDA
-#define	PIN_SDA         9
+#define	PORT_SCL        GPIO_D   // PD12 --> SCL
+#define	PIN_SCL         12
+#define	PORT_SDA        GPIO_D   // PD13 <-> SDA
+#define	PIN_SDA         13
+#if 0
 #define	PORT_RESET      GPIO_B   // PB3 --> RESET
 #define	PIN_RESET       3
+#endif
 
 //--------------------------------------------
 #define I2C_SUCCESS         0
@@ -58,19 +60,23 @@
 //--------------------------------------------
 void hal_imgsensor_init_i2c(void)
 {
-	// IO port B clock enable
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
-	// I2C1 clock enable
-	RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;
+	// IO port D clock enable
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
+	// I2C4 clock enable
+	RCC->APB1ENR |= RCC_APB1ENR_I2C4EN;
 
 	// Set first to prevent glitches
 	hw_set_pin(GPIOx(PORT_SCL), PIN_SCL, 1);      // SCL = 1
 	hw_set_pin(GPIOx(PORT_SDA), PIN_SDA, 1);      // SDA = 1
+#if 0
 	hw_set_pin(GPIOx(PORT_RESET), PIN_RESET, 1);  // RST = 1
+#endif
 
-	hw_cfg_pin(GPIOx(PORT_SCL), PIN_SCL, GPIOCFG_MODE_ALT | GPIO_AF4_I2C1 | GPIOCFG_OSPEED_LOW | GPIOCFG_OTYPE_OPEN | GPIOCFG_PUPD_NONE);
-	hw_cfg_pin(GPIOx(PORT_SDA), PIN_SDA, GPIOCFG_MODE_ALT | GPIO_AF4_I2C1 | GPIOCFG_OSPEED_LOW | GPIOCFG_OTYPE_OPEN | GPIOCFG_PUPD_NONE);
+	hw_cfg_pin(GPIOx(PORT_SCL), PIN_SCL, GPIOCFG_MODE_ALT | GPIO_AF4_I2C4 | GPIOCFG_OSPEED_LOW | GPIOCFG_OTYPE_OPEN | GPIOCFG_PUPD_NONE);
+	hw_cfg_pin(GPIOx(PORT_SDA), PIN_SDA, GPIOCFG_MODE_ALT | GPIO_AF4_I2C4 | GPIOCFG_OSPEED_LOW | GPIOCFG_OTYPE_OPEN | GPIOCFG_PUPD_NONE);
+#if 0
 	hw_cfg_pin(GPIOx(PORT_RESET),  PIN_RESET,  GPIOCFG_MODE_OUT | GPIOCFG_OSPEED_LOW  | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_PUP);
+#endif
 
 
 	// I2C_TIMINGR:
@@ -81,20 +87,22 @@ void hal_imgsensor_init_i2c(void)
 	// Rise time = 700 ns
 	// Fall time = 100 ns
 	// I2C_TIMINGR value has been calculated by STM32CubeMX
-	I2C1->TIMINGR = 0x30C03444;
+	I2C4->TIMINGR = 0x30C03444;
 
 	// I2C_CR1:
 	// PE = 1: Peripheral enable
-	I2C1->CR1 |= I2C_CR1_PE;
+	I2C4->CR1 |= I2C_CR1_PE;
 }
 
 //--------------------------------------------
 void hal_imgsensor_hard_reset(void)
 {
+#if 0
 	hw_set_pin(GPIOx(PORT_RESET), PIN_RESET, 0);  // RST = 0
 	delay_ms(5);
 	hw_set_pin(GPIOx(PORT_RESET), PIN_RESET, 1);  // RST = 1
 	delay_ms(10);
+#endif
 }
 
 //--------------------------------------------
@@ -102,31 +110,31 @@ uint8_t hal_imgsensor_read_register(uint8_t reg, uint8_t *data)
 {
 	uint32_t cnt;
 
-	I2C1->CR2 = I2C_ADDR_WRITE | (1 << I2C_CR2_NBYTES_Pos) | I2C_CR2_AUTOEND | I2C_CR2_START;
+	I2C4->CR2 = I2C_ADDR_WRITE | (1 << I2C_CR2_NBYTES_Pos) | I2C_CR2_AUTOEND | I2C_CR2_START;
 
-	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C1->ISR & I2C_ISR_TXIS); cnt++);
+	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C4->ISR & I2C_ISR_TXIS); cnt++);
 	if (cnt == I2C_WAIT)
 	{
 		return I2C_FAIL;
 	}
-	I2C1->TXDR = reg;
+	I2C4->TXDR = reg;
 
-	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C1->ISR & I2C_ISR_STOPF); cnt++);
+	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C4->ISR & I2C_ISR_STOPF); cnt++);
 	if (cnt == I2C_WAIT)
 	{
 		return I2C_FAIL;
 	}
 
-	I2C1->CR2 = I2C_ADDR_READ | (1 << I2C_CR2_NBYTES_Pos) | I2C_CR2_AUTOEND | I2C_CR2_START | I2C_CR2_RD_WRN;
+	I2C4->CR2 = I2C_ADDR_READ | (1 << I2C_CR2_NBYTES_Pos) | I2C_CR2_AUTOEND | I2C_CR2_START | I2C_CR2_RD_WRN;
 
-	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C1->ISR & I2C_ISR_RXNE); cnt++);
+	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C4->ISR & I2C_ISR_RXNE); cnt++);
 	if (cnt == I2C_WAIT)
 	{
 		return I2C_FAIL;
 	}
-	*data = I2C1->RXDR;
+	*data = I2C4->RXDR;
 
-	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C1->ISR & I2C_ISR_STOPF); cnt++);
+	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C4->ISR & I2C_ISR_STOPF); cnt++);
 	if (cnt == I2C_WAIT)
 	{
 		return I2C_FAIL;
@@ -140,23 +148,23 @@ uint8_t hal_imgsensor_write_register(uint8_t reg, uint8_t data)
 {
 	uint32_t cnt;
 
-	I2C1->CR2 = I2C_ADDR_WRITE | (2 << I2C_CR2_NBYTES_Pos) | I2C_CR2_AUTOEND | I2C_CR2_START;
+	I2C4->CR2 = I2C_ADDR_WRITE | (2 << I2C_CR2_NBYTES_Pos) | I2C_CR2_AUTOEND | I2C_CR2_START;
 
-	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C1->ISR & I2C_ISR_TXIS); cnt++);
+	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C4->ISR & I2C_ISR_TXIS); cnt++);
 	if (cnt == I2C_WAIT)
 	{
 		return I2C_FAIL;
 	}
-	I2C1->TXDR = reg;
+	I2C4->TXDR = reg;
 
-	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C1->ISR & I2C_ISR_TXIS); cnt++);
+	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C4->ISR & I2C_ISR_TXIS); cnt++);
 	if (cnt == I2C_WAIT)
 	{
 		return I2C_FAIL;
 	}
-	I2C1->TXDR = data;
+	I2C4->TXDR = data;
 
-	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C1->ISR & I2C_ISR_STOPF); cnt++);
+	for (cnt = 0; (cnt < I2C_WAIT) && !(I2C4->ISR & I2C_ISR_STOPF); cnt++);
 	if (cnt == I2C_WAIT)
 	{
 		return I2C_FAIL;

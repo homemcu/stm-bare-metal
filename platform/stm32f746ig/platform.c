@@ -53,8 +53,8 @@ void delay_us(uint32_t delay_us)
 // fHCLK =  216 MHz (AHB)
 // fPCLK1 =  54 MHz (APB1)
 // fPCLK2 = 108 MHz (APB2)
-#define PLL_M      8
-#define PLL_N      432
+#define PLL_M      6
+#define PLL_N      324
 #define PLL_P      2
 #define PLL_Q      9
 static void SetSysClock(void)
@@ -79,7 +79,11 @@ static void SetSysClock(void)
 	RCC->CFGR |= RCC_CFGR_PPRE1_DIV4;
 
 	// configure the main PLL
-	RCC->PLLCFGR = PLL_M | (PLL_N << 6) | (((PLL_P >> 1) - 1) << 16) | RCC_PLLCFGR_PLLSRC_HSE | (PLL_Q << 24);
+	RCC->PLLCFGR = (PLL_M << RCC_PLLCFGR_PLLM_Pos) |
+	               (PLL_N << RCC_PLLCFGR_PLLN_Pos) |
+                   (((PLL_P >> 1) - 1) << RCC_PLLCFGR_PLLP_Pos) |
+	               (PLL_Q << RCC_PLLCFGR_PLLQ_Pos) |
+	               RCC_PLLCFGR_PLLSRC_HSE;
 
 	// enable the main PLL
 	RCC->CR |= RCC_CR_PLLON;
@@ -154,10 +158,10 @@ static void DWTInit(void)
 
 //--------------------------------------------
 #if UART_TERMINAL == 1
-#define	PORT_TX        GPIO_A   // PA9  --> RXD (Remove USB.P3 jumper!)
-#define	PIN_TX         9
-#define	PORT_RX        GPIO_A   // PA10 <-- TXD
-#define	PIN_RX         10
+#define	PORT_TX        GPIO_B   // PB6  --> RXD
+#define	PIN_TX         6
+#define	PORT_RX        GPIO_B   // PB7  <-- TXD
+#define	PIN_RX         7
 
 //--------------------------------------------
 // USART Baud rate
@@ -173,8 +177,8 @@ static void UART1Init(void)
 {
 	// USART1 clock enable
 	RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
-	// IO port A clock enable
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+	// IO port B clock enable
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
 
 	hw_cfg_pin(GPIOx(PORT_TX), PIN_TX, GPIOCFG_MODE_ALT | GPIO_AF7_USART1 | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_PUP);
 	hw_cfg_pin(GPIOx(PORT_RX), PIN_RX, GPIOCFG_MODE_ALT | GPIO_AF7_USART1 | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_PUP);
@@ -275,9 +279,17 @@ int getchar(void)
 //--------------------------------------------
 void platform_init(void)
 {
+#if 1
+	// Number of group priorities: 16
+	// Number of sub priorities: none
+	// All the priority bits are the preempt priority bits only
+	NVIC_SetPriorityGrouping(3);
+#endif
 	SetSysClock();
 	SystemCoreClockUpdate();
 	SysTick_Config(SystemCoreClock / 1000);
+	// Changing the SysTick_IRQn priority level in the new group
+	NVIC_SetPriority(SysTick_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
 	DWTInit();
 #ifdef UART_TERMINAL
 #if UART_TERMINAL == 1

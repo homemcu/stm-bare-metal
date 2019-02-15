@@ -5,6 +5,10 @@ Projects structure:
 | Firmware<br>examples | STM8S207R8<br>(SDCC, IAR) | STM32F407ZG<br>(GCC, IAR) | STM32F746IG<br>(GCC, IAR) |
 | ------ | :------: | :------: | :------: |
 | devices/ | | | |
+| ../audio-in/ | | | |
+| ../../i2s | | | SPI-I2S, SAI-I2S |
+| ../audio-out/ | | | |
+| ../../i2s | | | SPI-I2S, SAI-I2S |
 | ../camera/ | | | |
 | ../../ov2640 | | DCMI+I2C | DCMI+I2C |
 | ../../ov7670 | | DCMI+I2C | DCMI+I2C |
@@ -26,11 +30,21 @@ Projects structure:
 | ../spi-flash/ | | | |
 | ../../w25q | SPI(1) | SPI | |
 | apps/ | | | |
+| ../audio/ | | | |
+| ../../fatfs+sd-card+i2s | | | SPI, SDMMC<br>SPI-I2S, SAI-I2S |
 | ../file-system/ | | | |
 | ../../fatfs+sd-card | SPI(2) | SPI, SDIO | SPI, SDMMC |
 | ../../spiffs+spi-flash | SPI | SPI | |
 | ../network/ | | | |
 | ../../ethernet-lwip | | RMII | |
+| ../usb-device/ | | | |
+| ../../cdc-loopback | | | OTGFS, OTGHS(ULPI) |
+| ../../cdc-rndis-uip | | | OTGFS, OTGHS(ULPI) |
+| ../../hid-custom | | | OTGFS, OTGHS(ULPI) |
+| ../../msc-sdcard | | | OTGFS, OTGHS(ULPI)<br>SPI, SDMMC |
+| ../../uac-adc | | | OTGFS, OTGHS(ULPI)<br>SPI-I2S, SAI-I2S |
+| ../../uac-dac | | | OTGFS, OTGHS(ULPI)<br>SPI-I2S, SAI-I2S |
+| ../../uvc-camera | | | OTGFS, OTGHS(ULPI)<br>DCMI+I2C |
 
 1 - Compiling with SDCC < #10503 fails.
 Please see [bug ticket #2794](https://sourceforge.net/p/sdcc/bugs/2794/)

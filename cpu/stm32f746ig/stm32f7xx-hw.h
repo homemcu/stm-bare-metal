@@ -62,16 +62,30 @@
 #define GPIO_AF_MASK            0x000F  // mask in AFR[0/1]
 #define GPIO_AF0_MCO            0
 #define GPIO_AF1_TIM1           1
+#define GPIO_AF1_TIM2           1
 #define GPIO_AF4_I2C1           4
 #define GPIO_AF4_I2C2           4
 #define GPIO_AF4_I2C3           4
+#define GPIO_AF4_I2C4           4
 #define GPIO_AF5_SPI1           5
 #define GPIO_AF5_SPI2           5
+#define GPIO_AF5_SPI5           5
+#define GPIO_AF5_I2S1           5
+#define GPIO_AF5_I2S2           5
+#define GPIO_AF5_I2S3           5
+#define GPIO_AF5_I2S_CKIN       5
 #define GPIO_AF6_SPI3           6
+#define GPIO_AF6_I2S3           6
+#define GPIO_AF6_SAI1           6
 #define GPIO_AF7_USART1         7
+#define GPIO_AF8_UART7          8
+#define GPIO_AF8_SAI2           8
+#define GPIO_AF10_USB_FS        10
+#define GPIO_AF10_USB_HS        10
+#define GPIO_AF10_SAI2          10
 #define GPIO_AF11_ETH           11
 #define GPIO_AF12_FMC           12
-#define GPIO_AF12_SDMMC         12
+#define GPIO_AF12_SDMMC1        12
 #define GPIO_AF13_DCMI          13
 
 #define GPIOCFG_MODE_SHIFT      4

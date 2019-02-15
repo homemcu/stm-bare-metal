@@ -38,24 +38,24 @@
 
 //--------------------------------------------
 // WSYNC, HSYNC and PCLK wires must be the same length as data wires
-#define	PORT_D0         GPIO_H // PH9  <-- D0
-#define	PIN_D0          9
-#define	PORT_D1         GPIO_H // PH10 <-- D1
-#define	PIN_D1          10
+#define	PORT_D0         GPIO_C // PC6  <-- D0
+#define	PIN_D0          6
+#define	PORT_D1         GPIO_C // PC7  <-- D1
+#define	PIN_D1          7
 #define	PORT_D2         GPIO_H // PH11 <-- D2
 #define	PIN_D2          11
 #define	PORT_D3         GPIO_H // PH12 <-- D3
 #define	PIN_D3          12
-#define	PORT_D4         GPIO_E // PE4  <-- D4
-#define	PIN_D4          4
+#define	PORT_D4         GPIO_H // PH14 <-- D4
+#define	PIN_D4          14
 #define	PORT_D5         GPIO_D // PD3  <-- D5
 #define	PIN_D5          3
-#define	PORT_D6         GPIO_E // PE5  <-- D6
-#define	PIN_D6          5
-#define	PORT_D7         GPIO_E // PE6  <-- D7
-#define	PIN_D7          6
-#define	PORT_HSYNC      GPIO_H // PH8  <-- HREF(VH)
-#define	PIN_HSYNC       8
+#define	PORT_D6         GPIO_B // PB8  <-- D6
+#define	PIN_D6          8
+#define	PORT_D7         GPIO_B // PB9  <-- D7
+#define	PIN_D7          9
+#define	PORT_HSYNC      GPIO_A // PA4  <-- HREF(VH)
+#define	PIN_HSYNC       4
 #define	PORT_VSYNC      GPIO_G // PG9  <-- VSYNC(VS)
 #define	PIN_VSYNC       9
 #define	PORT_PIXCK      GPIO_A // PA6  <-- PCLK
@@ -82,11 +82,12 @@
 void hal_imgsensor_init_capture(void)
 {
 	// IO port A clock enable
+	// IO port B clock enable
+	// IO port C clock enable
 	// IO port D clock enable
-	// IO port E clock enable
-	// IO port H clock enable
 	// IO port G clock enable
-	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIODEN | RCC_AHB1ENR_GPIOEEN | RCC_AHB1ENR_GPIOHEN | RCC_AHB1ENR_GPIOGEN;
+	// IO port H clock enable
+	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIOCEN | RCC_AHB1ENR_GPIODEN | RCC_AHB1ENR_GPIOGEN | RCC_AHB1ENR_GPIOHEN;
 	// DCMI clock enable
 	RCC->AHB2ENR |= RCC_AHB2ENR_DCMIEN;
 
@@ -145,14 +146,14 @@ void hal_imgsensor_init_clock(void)
 
 	// fCK_PSC = fPCLK2 * 2
 	// fCK_CNT = fCK_PSC / (TIMx_PSC + 1)
-	// fCK_CNT = 84 * 2 / (0 + 1) = 168MHz
+	// fCK_CNT = 108 * 2 / (0 + 1) = 216MHz
 	TIM1->PSC = 0;
 
 	// period = (fCK_CNT / fCK_OUT)
-	// period = 168 / 24 = 7
+	// period = 216 / 23,78 = 9
 	// ARR = period - 1
-	// ARR = 7 - 1 = 6
-	TIM1->ARR = 6;
+	// ARR = 9 - 1 = 8
+	TIM1->ARR = 8;
 
 	// Set the UG bit to enable UEV
 	TIM1->EGR |= TIM_EGR_UG;
@@ -169,8 +170,8 @@ void hal_imgsensor_init_clock(void)
 
 	// Set the duty cycle to 50%
 	// CCR1 = period / 2
-	// CCR1 = 7 / 2 = 3
-	TIM1->CCR1 = 3;
+	// CCR1 = 9 / 2 = 4
+	TIM1->CCR1 = 4;
 
 	// Enable the TIM1 channel1 and keep the default configuration
 	// (state after reset) for channel polarity
