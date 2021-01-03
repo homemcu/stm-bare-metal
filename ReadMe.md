@@ -49,7 +49,7 @@ Projects structure:
 1 - Compiling with SDCC < #10503 fails.
 Please see [bug ticket #2794](https://sourceforge.net/p/sdcc/bugs/2794/)
 
-2 - Compiling with SDCC fails when FF_USE_MKFS is defined.
+2 - Compiling with SDCC < #11130 fails when FF_USE_MKFS is defined.
 Please see [bug ticket #2793](https://sourceforge.net/p/sdcc/bugs/2793/)
 
 The source code is licensed under [GPLv2](http://www.gnu.org/licenses/gpl-2.0.html).
