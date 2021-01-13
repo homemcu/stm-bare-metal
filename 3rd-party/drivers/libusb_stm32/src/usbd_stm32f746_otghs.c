@@ -1,7 +1,7 @@
 /* This file is the part of the Lightweight USB device Stack for STM32 microcontrollers
  *
  * Copyright ©2016 Dmitry Filimonchuk <dmitrystu[at]gmail[dot]com>
- * Modifications Copyright (c) 2018, 2019 Vladimir Alemasov
+ * Modifications Copyright (c) 2018-2021 Vladimir Alemasov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@
 #define MAX_EP          4 
 #define MAX_RX_PACKET   1024  /* in bytes */
 #define MAX_CONTROL_EP  1
-#define MAX_FIFO_SZ     1024  /*in 32-bit chunks */
+#define MAX_FIFO_SZ     1024  /* in 32-bit chunks */
 
-#define RX_FIFO_SZ      ((5 * MAX_CONTROL_EP + 8) + ((MAX_RX_PACKET / 4) + 1) + (MAX_EP * 2) + 1) /*in 32-bit chunks */
+#define RX_FIFO_SZ      ((5 * MAX_CONTROL_EP + 8) + ((MAX_RX_PACKET / 4) + 1) + (MAX_EP * 2) + 1) /* in 32-bit chunks */
 
 #define STATUS_VAL(x)   (USBD_HW_ADDRFST | (x))
 
@@ -34,15 +34,15 @@ static USB_OTG_DeviceTypeDef * const OTGD = (void*)(USB_OTG_HS_PERIPH_BASE + USB
 static volatile uint32_t * const OTGPCTL  = (void*)(USB_OTG_HS_PERIPH_BASE + USB_OTG_PCGCCTL_BASE);
 
 
-inline static volatile uint32_t* EPFIFO(uint8_t ep) {
+inline static uint32_t* EPFIFO(uint32_t ep) {
     return (uint32_t*)(USB_OTG_HS_PERIPH_BASE + USB_OTG_FIFO_BASE + (ep << 12));
 }
 
-inline static USB_OTG_INEndpointTypeDef* EPIN(uint8_t ep) {
+inline static USB_OTG_INEndpointTypeDef* EPIN(uint32_t ep) {
     return (void*)(USB_OTG_HS_PERIPH_BASE + USB_OTG_IN_ENDPOINT_BASE + (ep << 5));
 }
 
-inline static USB_OTG_OUTEndpointTypeDef* EPOUT(uint8_t ep) {
+inline static USB_OTG_OUTEndpointTypeDef* EPOUT(uint32_t ep) {
     return (void*)(USB_OTG_HS_PERIPH_BASE + USB_OTG_OUT_ENDPOINT_BASE + (ep << 5));
 }
 
@@ -106,49 +106,54 @@ static void enable(bool enable) {
     if (enable) {
         /* enabling USB_OTG in RCC */
         _BST(RCC->AHB1ENR, RCC_AHB1ENR_OTGHSEN);
+#ifdef USBD_ULPI
         /* USB OTG HSULPI clock enable */
         _BST(RCC->AHB1ENR, RCC_AHB1ENR_OTGHSULPIEN);
+#endif
+        /* waiting AHB ready */
         _WBS(OTG->GRSTCTL, USB_OTG_GRSTCTL_AHBIDL);
         /* configure OTG as device */
-        _BST(OTG->GUSBCFG, USB_OTG_GUSBCFG_FDMOD);
-        /* configuring Vbus sense and SOF output */
-/* The VBUS detection has not yet been made */
-#if defined (USBD_VBUS_DETECT) && defined(USBD_SOF_OUT)
-        /* OTG->GCCFG = USB_OTG_GCCFG_VBUSBSEN | USB_OTG_GCCFG_SOFOUTEN; */
-#elif defined(USBD_VBUS_DETECT)
-        /* OTG->GCCFG = USB_OTG_GCCFG_VBUSBSEN; */
-        OTG->GCCFG |= USB_OTG_GCCFG_VBDEN;
-#elif defined(USBD_SOF_OUT)
-        /* OTG->GCCFG = USB_OTG_GCCFG_NOVBUSSENS | USB_OTG_GCCFG_SOFOUTEN; */
+#ifdef USBD_ULPI
+        OTG->GUSBCFG = USB_OTG_GUSBCFG_FDMOD |
+                       _VAL2FLD(USB_OTG_GUSBCFG_TRDT, 0x09) |
+                       _VAL2FLD(USB_OTG_GUSBCFG_TOCAL, 0x01);
 #else
-        OTG->GCCFG &= ~USB_OTG_GCCFG_VBDEN;
-        OTG->GOTGCTL |= USB_OTG_GOTGCTL_BVALOEN;
-        OTG->GOTGCTL |= USB_OTG_GOTGCTL_BVALOVAL;
+        OTG->GUSBCFG = USB_OTG_GUSBCFG_FDMOD | USB_OTG_GUSBCFG_PHYSEL |
+                       _VAL2FLD(USB_OTG_GUSBCFG_TRDT, 0x09) |
+                       _VAL2FLD(USB_OTG_GUSBCFG_TOCAL, 0x01);
 #endif
-        /* do core soft reset */
-        _BST(OTG->GRSTCTL, USB_OTG_GRSTCTL_CSRST);
-        _WBC(OTG->GRSTCTL, USB_OTG_GRSTCTL_CSRST);
-#ifdef USBD_FULL_SPEED
-        /* Setup USB FS speed and frame interval */
-        _BMD(OTGD->DCFG, USB_OTG_DCFG_PERSCHIVL | USB_OTG_DCFG_DSPD,
-             _VAL2FLD(USB_OTG_DCFG_PERSCHIVL, 0) | _VAL2FLD(USB_OTG_DCFG_DSPD, 0x01));
+        /* configuring Vbus sense */
+#if defined(USBD_VBUS_DETECT)
+        _BST(OTG->GCCFG, USB_OTG_GCCFG_VBDEN);
 #else
-        /* Setup USB HS speed and frame interval */
-        _BMD(OTGD->DCFG, USB_OTG_DCFG_PERSCHIVL | USB_OTG_DCFG_DSPD,
-             _VAL2FLD(USB_OTG_DCFG_PERSCHIVL, 0) | _VAL2FLD(USB_OTG_DCFG_DSPD, 0x00));
+        _BST(OTG->GOTGCTL, USB_OTG_GOTGCTL_BVALOEN);
+        _BST(OTG->GOTGCTL, USB_OTG_GOTGCTL_BVALOVAL);
 #endif
-        /* start PHY clock */
+        /* enable PHY clock */
         *OTGPCTL = 0;
         /* soft disconnect device */
         _BST(OTGD->DCTL, USB_OTG_DCTL_SDIS);
+#ifdef USBD_FULL_SPEED
+        /* Setup USB FS speed */
+#ifdef USBD_ULPI
+        _BMD(OTGD->DCFG, USB_OTG_DCFG_DSPD, _VAL2FLD(USB_OTG_DCFG_DSPD, 0x01));
+#else
+        _BMD(OTGD->DCFG, USB_OTG_DCFG_DSPD, _VAL2FLD(USB_OTG_DCFG_DSPD, 0x03));
+#endif
+#else
+        /* Setup USB HS speed */
+        _BMD(OTGD->DCFG, USB_OTG_DCFG_DSPD, _VAL2FLD(USB_OTG_DCFG_DSPD, 0x00));
+#endif
+#ifdef USBD_ULPI
         delay_ms(3);
+#endif
         /* setting max RX FIFO size */
         OTG->GRXFSIZ = RX_FIFO_SZ;
         /* setting up EP0 TX FIFO SZ as 64 bytes */
         OTG->DIEPTXF0_HNPTXFSIZ = RX_FIFO_SZ | (0x10 << 16);
         /* unmask EP interrupts */
         OTGD->DIEPMSK = USB_OTG_DIEPMSK_XFRCM;
-        OTGD->DOEPMSK = USB_OTG_DOEPMSK_OTEPDM;
+        OTGD->DOEPMSK = USB_OTG_DOEPMSK_STUPM;
         /* unmask core interrupts */
         OTG->GINTMSK  = USB_OTG_GINTMSK_USBRST | USB_OTG_GINTMSK_ENUMDNEM |
 #if !defined(USBD_SOF_DISABLED)
@@ -166,7 +171,9 @@ static void enable(bool enable) {
         if (RCC->AHB1ENR & RCC_AHB1ENR_OTGHSEN) {
             _BST(RCC->AHB1RSTR, RCC_AHB1RSTR_OTGHRST);
             _BCL(RCC->AHB1RSTR, RCC_AHB1RSTR_OTGHRST);
+#ifdef USBD_ULPI
             _BCL(RCC->AHB1ENR, RCC_AHB1ENR_OTGHSULPIEN);
+#endif
             _BCL(RCC->AHB1ENR, RCC_AHB1ENR_OTGHSEN);
         }
     }
@@ -336,7 +343,7 @@ static void ep_deconfig(uint8_t ep) {
 }
 
 static int32_t ep_read(uint8_t ep, void* buf, uint16_t blen) {
-    int32_t len;
+    uint32_t len, tmp;
     volatile uint32_t *fifo = EPFIFO(0);
     /* no data in RX FIFO */
     if (!(OTG->GINTSTS & USB_OTG_GINTSTS_RXFLVL)) return -1;
@@ -344,43 +351,43 @@ static int32_t ep_read(uint8_t ep, void* buf, uint16_t blen) {
     if ((OTG->GRXSTSR & USB_OTG_GRXSTSP_EPNUM) != ep) return -1;
     /* pop data from fifo */
     len = _FLD2VAL(USB_OTG_GRXSTSP_BCNT, OTG->GRXSTSP);
-    for (unsigned i = 0; i < len; i +=4) {
-        uint32_t _t = *fifo;
-        if (blen >= 4) {
-            *(__packed uint32_t *)buf = _t;
-            blen -= 4;
-            buf = (void *)((__packed uint32_t *)buf + 1);
-        } else {
-            while (blen) {
-                *(uint8_t*)buf = 0xFF & _t;
-                buf = (void *)((uint8_t *)buf + 1);
-                _t >>= 8;
-                blen --;
+    for (int idx = 0; idx < len; idx++) {
+        if ((idx & 0x03) == 0x00) {
+            tmp = *fifo;
             }
+        if (idx < blen) {
+            ((uint8_t*)buf)[idx] = tmp & 0xFF;
+            tmp >>= 8;
         }
     }
-    return len;
+    return (len < blen) ? len : blen;
 }
 
 static int32_t ep_write(uint8_t ep, void *buf, uint16_t blen) {
+    uint32_t len, tmp;
     ep &= 0x7F;
-    volatile uint32_t* _fifo = EPFIFO(ep);
+    volatile uint32_t* fifo = EPFIFO(ep);
     USB_OTG_INEndpointTypeDef* epi = EPIN(ep);
     /* transfer data size in 32-bit words */
-    uint32_t  _len = (blen + 3) >> 2;
+    len = (blen + 3) >> 2;
     /* no enough space in TX fifo */
-    if (_len > _FLD2VAL(USB_OTG_DTXFSTS_INEPTFSAV, epi->DTXFSTS)) return -1;
+    if (len > _FLD2VAL(USB_OTG_DTXFSTS_INEPTFSAV, epi->DTXFSTS)) return -1;
     if (ep != 0 && epi->DIEPCTL & USB_OTG_DIEPCTL_EPENA) {
         return -1;
     }
     _BMD(epi->DIEPTSIZ,
          USB_OTG_DIEPTSIZ_PKTCNT | USB_OTG_DIEPTSIZ_MULCNT | USB_OTG_DIEPTSIZ_XFRSIZ,
          _VAL2FLD(USB_OTG_DIEPTSIZ_PKTCNT, 1) | _VAL2FLD(USB_OTG_DIEPTSIZ_MULCNT, 1 ) | _VAL2FLD(USB_OTG_DIEPTSIZ_XFRSIZ, blen));
-    _BMD(epi->DIEPCTL, USB_OTG_DIEPCTL_STALL, USB_OTG_DIEPCTL_CNAK);
-    _BST(epi->DIEPCTL, USB_OTG_DIEPCTL_EPENA);
-    while (_len--) {
-        *_fifo = *((__packed uint32_t *)buf);
-        buf = (void *)((__packed uint32_t *)buf + 1);
+    _BMD(epi->DIEPCTL, USB_OTG_DIEPCTL_STALL, USB_OTG_DOEPCTL_CNAK);
+    _BST(epi->DIEPCTL, USB_OTG_DOEPCTL_EPENA);
+    /* push data to FIFO */
+    tmp = 0;
+    for (int idx = 0; idx < blen; idx++) {
+        tmp |= (uint32_t)((uint8_t*)buf)[idx] << ((idx & 0x03) << 3);
+        if ((idx & 0x03) == 0x03 || (idx + 1) == blen) {
+            *fifo = tmp;
+            tmp = 0;
+        }
     }
     return blen;
 }
@@ -420,10 +427,10 @@ static void evt_poll(usbd_device *dev, usbd_evt_callback callback) {
             _t = OTG->GRXSTSR;
             ep = _t & USB_OTG_GRXSTSP_EPNUM;
             switch (_FLD2VAL(USB_OTG_GRXSTSP_PKTSTS, _t)) {
-            case 0x02:  /* OUT recieved */
+            case 0x02:  /* OUT received */
                 evt = usbd_evt_eprx;
                 break;
-            case 0x06:  /* SETUP recieved */
+            case 0x06:  /* SETUP received */
                 /* flushing TX if something stuck in control endpoint */
                 if (EPIN(ep)->DIEPTSIZ & USB_OTG_DIEPTSIZ_PKTCNT) {
                     Flush_TX(ep);

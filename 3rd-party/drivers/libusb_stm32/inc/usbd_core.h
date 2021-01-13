@@ -1,7 +1,7 @@
 /* This file is the part of the Lightweight USB device Stack for STM32 microcontrollers
  *
  * Copyright ©2016 Dmitry Filimonchuk <dmitrystu[at]gmail[dot]com>
- * Modifications Copyright (c) 2018, 2019 Vladimir Alemasov
+ * Modifications Copyright (c) 2018-2020 Vladimir Alemasov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,15 +139,6 @@ enum usbd_ctl_state {
                                  * for the TX completion.*/
     usbd_ctl_statusin,          /**<\brief STATUS-IN stage.*/
     usbd_ctl_statusout,         /**<\brief STATUS-OUT stage.*/
-};
-
-/**\brief Asynchronous device control commands.*/
-enum usbd_commands {
-    usbd_cmd_enable,            /**<\brief Enables device.*/
-    usbd_cmd_disable,           /**<\brief Disables device.*/
-    usbd_cmd_connect,           /**<\brief Connects device to host.*/
-    usbd_cmd_disconnect,        /**<\brief Disconnects device from host.*/
-    usbd_cmd_reset,             /**<\brief Resets device.*/
 };
 
 /**\brief Reporting status results.*/

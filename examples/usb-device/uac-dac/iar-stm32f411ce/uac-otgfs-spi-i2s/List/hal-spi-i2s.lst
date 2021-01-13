@@ -1,0 +1,899 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V8.50.1.245/W32 for ARM         09/Jan/2021  10:06:21
+# Copyright 1999-2020 IAR Systems AB.
+#
+#    Cpu mode             
+#    Endian            =  little
+#    Source file       =
+#        C:\Programming\Microcontrollers\Devices\hal\src\stm32f411ce\hal-spi-i2s.c
+#    Command line      =
+#        -f C:\Users\18EE~1\AppData\Local\Temp\EW764D.tmp
+#        (C:\Programming\Microcontrollers\Devices\hal\src\stm32f411ce\hal-spi-i2s.c
+#        -D STM32F411xE -D HSE_VALUE=25000000 -D USBD_OTGFS --preprocess=s
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -lcN
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj
+#        --no_cse --no_unroll --no_inline --no_code_motion --no_tbaa
+#        --no_clustering --no_scheduling --debug --endian=little
+#        --cpu=Cortex-M4 -e --fpu=VFPv4_sp --dlib_config "C:\Program Files
+#        (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\inc\c\DLib_Config_Normal.h" -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\src\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\hal\inc\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\drv\audio-out\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\class\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\uac-dac\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\cpu\stm32f411ce\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\platform\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\core\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\device\ST\STM32F4xx\Include\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\libusb_stm32\inc\
+#        -On)
+#    Locale            =  C
+#    List file         =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List\hal-spi-i2s.lst
+#    Object file       =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\hal-spi-i2s.o
+#    Runtime model:       
+#      __SystemLibrary =  DLib
+#      __dlib_version  =  6
+#
+###############################################################################
+
+C:\Programming\Microcontrollers\Devices\hal\src\stm32f411ce\hal-spi-i2s.c
+      1          /*
+      2          * Copyright (c) 2019, 2020 Vladimir Alemasov
+      3          * All rights reserved
+      4          *
+      5          * This program and the accompanying materials are distributed under 
+      6          * the terms of GNU General Public License version 2 
+      7          * as published by the Free Software Foundation.
+      8          *
+      9          * This program is distributed in the hope that it will be useful,
+     10          * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     11          * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     12          * GNU General Public License for more details.
+     13          */
+     14          
+     15          #include "platform.h"
+     16          #include "stm32f4xx-hw.h"
+     17          
+     18          // I2S1(PLLI2S, I2S_CKIN)
+     19          // GPIO_AF5_I2S1
+     20          // CK:    PA5    PB3
+     21          // WS:    PA4    PA15
+     22          // SD:    PA7    PB5
+     23          //
+     24          // I2S2(PLLI2S, I2S_CKIN)
+     25          // GPIO_AF5_I2S2
+     26          // CK:    PB10
+     27          // WS:    PB9    PB12
+     28          // SD:    PB15
+     29          // MCK:   PA3
+     30          // GPIO_AF6_I2S2
+     31          // MCK:   PA6
+     32          // EXTSD: PB14
+     33          //
+     34          // I2S3(PLLI2S, I2S_CKIN)
+     35          // GPIO_AF6_I2S3
+     36          // CK:    PB3
+     37          // WS:    PA4    PA15
+     38          // SD:    PB5
+     39          // MCK:   PB10
+     40          // GPIO_AF7_I2S3
+     41          // CK:    PB12
+     42          // EXTSD: PB4
+     43          //
+     44          // I2S4(PLLI2S, I2S_CKIN)
+     45          // GPIO_AF5_I2S4
+     46          // CK:    PB13
+     47          // WS:    PB12
+     48          // SD:    PA1
+     49          //
+     50          // I2S5(PLLI2S, I2S_CKIN)
+     51          // GPIO_AF6_I2S5
+     52          // CK:    PB0
+     53          // WS:    PB1
+     54          // SD:    PA10   PB8
+     55          //
+     56          // GPIO_AF5_I2S_CKIN
+     57          // CKIN:  PA2    PB11
+     58          //
+     59          // The first clock source in the brackets
+     60          // is selected as I2S clock by reset,
+     61          // see RCC->CFGR register (I2SSRC)
+     62          
+     63          //--------------------------------------------
+     64          #define	PORT_CK         GPIO_B   // PB10 --> BCLK(BCK)
+     65          #define	PIN_CK          10
+     66          #define	PORT_WS         GPIO_B   // PB12 --> WSEL(LCK)
+     67          #define	PIN_WS          12
+     68          #define	PORT_SD         GPIO_B   // PB15 --> DIN
+     69          #define	PIN_SD          15
+     70          #define	PORT_MCLK       GPIO_A   // PA3  --> PA0(TIM2_ETR, see hal-i2s-mclk.c)
+     71          #define	PIN_MCLK        3
+     72          
+     73          //--------------------------------------------
+     74          #if 1
+     75          #define DMA_SPI2_IRQ_PREEMPT_PRIORITY    0
+     76          #endif
+     77          
+     78          //--------------------------------------------
+     79          #ifndef I2S_FCLK
+     80          // 44100, 48000, 88200, 96000, 176400, 192000 are allowed
+     81          #define I2S_FCLK       44100
+     82          #endif
+     83          #ifndef I2S_MCLK
+     84          #define I2S_MCLK       1
+     85          #endif
+     86          #ifndef I2S_BITRES
+     87          // 16, 24, 32 are allowed
+     88          #define I2S_BITRES     16
+     89          #endif
+     90          // Based on the specificity of the SPI-I2S interface, only 16-bit and 32-bit variants may be used:
+     91          #if I2S_BITRES == 16
+     92          #define BYTES_PER_AUDIO_SAMPLE    2
+     93          #else
+     94          #define BYTES_PER_AUDIO_SAMPLE    4
+     95          #endif
+     96          
+     97          //--------------------------------------------
+     98          // Frame clock (sound sampling rate) is applied to the WSEL(LCK) pin of the DAC(ADC)
+     99          // Sample clock is applied to the BCLK(BCK) pin of the DAC(ADC)
+    100          // Master clock can be used for USB feedback or/and the MCLK pin of the DAC(ADC)
+    101          //--------------------------------------------
+    102          // fFCLK - Frame clock
+    103          // fPLLI2SR - I2S PLL clock
+    104          // fSCLK - Sample clock, fSCLK = fFCLK * 'bits per frame' * 2, where 2 -> two channels (stereo)
+    105          // fMCLK - Master clock, fMCLK = fFCLK * 256
+    106          // Base clocks in Hz:
+    107          // +--------+-------------+-------------------+-----------------------+----------+
+    108          // | fFCLK  |   fPLLI2S   |       fSCLK       |        fSCLK          |  fMCLK   |
+    109          // |        |             | 16-bit resolution | 32(24)-bit resolution |          |
+    110          // +--------+-------------+-------------------+-----------------------+----------+
+    111          // |  44100 | 90333333.33 | 1411200           | 2822400               | 11289600 |
+    112          // |  48000 | 98333333.33 | 1536000           | 3072000               | 12288000 |
+    113          // |  88200 | 90333333.33 | 2822400           | 5644800               | 22579200 |
+    114          // |  96000 | 98333333.33 | 3072000           | 6144000               | 24576000 |
+    115          // | 176400 | 90333333.33 | 5644800           | 11289600              | 45158400 |
+    116          // | 192000 | 98333333.33 | 6144000           | 12288000              | 49152000 |
+    117          // +--------+-------------+-------------------+-----------------------+----------+
+    118          //
+    119          //--------------------------------------------
+    120          // HSE(25000000Hz) -> fPLLI2S M='/25' -> fPLLI2S N='x271' -> fPLLI2S R='/3' -> fPLLI2SR(90333333.33Hz)
+    121          #if I2S_FCLK == 44100 || I2S_FCLK == 88200 || I2S_FCLK == 176400
+    122          #define PLL_I2S_M      25
+    123          #define PLL_I2S_N      271
+    124          #define PLL_I2S_R      3
+    125          #endif
+    126          //--------------------------------------------
+    127          // HSE(25000000Hz) -> fPLLI2S M='/6' -> fPLLI2S N='x295' -> fPLLI2S R='/3' -> fPLLI2SR(98333333.33Hz)
+    128          #if I2S_FCLK == 48000 || I2S_FCLK == 96000 || I2S_FCLK == 192000
+    129          #define PLL_I2S_M      25
+    130          #define PLL_I2S_N      295
+    131          #define PLL_I2S_R      3
+    132          #endif
+    133          
+    134          //--------------------------------------------
+    135          static double i2s_mclk;
+    136          
+    137          //--------------------------------------------
+    138          void hal_spi_i2s_init(void)
+    139          {
+    140          	// I2S clock from PLLI2SR by default
+    141          	// configure the I2S PLL
+    142          	RCC->PLLI2SCFGR = (PLL_I2S_M << RCC_PLLI2SCFGR_PLLI2SM_Pos) | 
+    143          	                  (PLL_I2S_N << RCC_PLLI2SCFGR_PLLI2SN_Pos) | 
+    144          	                  (PLL_I2S_R << RCC_PLLI2SCFGR_PLLI2SR_Pos);
+    145          
+    146          	// PLLI2S enable
+    147          	RCC->CR |= RCC_CR_PLLI2SON;
+    148          
+    149          	// IO port B clock enable
+    150          	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
+    151          #if I2S_MCLK == 1
+    152          	// IO port A clock enable
+    153          	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+    154          #endif
+    155          
+    156          	// SPI2 clock enable
+    157          	RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
+    158          
+    159          	hw_cfg_pin(GPIOx(PORT_CK), PIN_CK, GPIOCFG_MODE_ALT | GPIO_AF5_I2S2 | GPIOCFG_OSPEED_MEDIUM | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_NONE);
+    160          	hw_cfg_pin(GPIOx(PORT_WS), PIN_WS, GPIOCFG_MODE_ALT | GPIO_AF5_I2S2 | GPIOCFG_OSPEED_LOW | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_NONE);
+    161          	hw_cfg_pin(GPIOx(PORT_SD), PIN_SD, GPIOCFG_MODE_ALT | GPIO_AF5_I2S2 | GPIOCFG_OSPEED_MEDIUM | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_NONE);
+    162          #if I2S_MCLK == 1
+    163          	hw_cfg_pin(GPIOx(PORT_MCLK), PIN_MCLK, GPIOCFG_MODE_ALT | GPIO_AF5_I2S2 | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_NONE);
+    164          #endif
+    165          }
+    166          
+    167          //--------------------------------------------
+    168          void hal_spi_i2s_config(uint8_t master_transmit)
+    169          {
+    170          	double i2s_clk;
+    171          	uint32_t reg;
+    172          
+    173          	// fPLLI2SR
+    174          	i2s_clk = (double)HSE_VALUE / (double)PLL_I2S_M * (double)PLL_I2S_N / (double)PLL_I2S_R;
+    175          
+    176          	// RM0385 Rev 7 1124/1709:
+    177          	//-----------------------------
+    178          	// When the master clock is enabled (MCKOE bit is set):
+    179          	// fFCLK = fPLLI2SR / (256*((2*I2SDIV) + ODD))
+    180          	// So when ODD=0 (ODD bit cleared)
+    181          	// I2SDIV = fPLLI2SR / (fFCLK*256*2)
+    182          	//-----------------------------
+    183          	// When the master clock is disabled (MCKOE bit cleared):
+    184          	// fFCLK = fPLLI2SR / (32*(CHLEN+1)*((2*I2SDIV) + ODD))
+    185          	// CHLEN = 0 when the channel frame is 16-bit wide
+    186          	// CHLEN = 1 when the channel frame is 32-bit wide
+    187          	// So when ODD=0 (ODD bit cleared) and CHLEN=0 (16-bit)
+    188          	// I2SDIV = fPLLI2SR / (fFCLK*32*1*2)
+    189          	// So when ODD=0 (ODD bit cleared) and CHLEN=1 (32-bit)
+    190          	// I2SDIV = fPLLI2SR / (fFCLK*32*2*2)
+    191          
+    192          	//-----------------------------
+    193          #if I2S_MCLK == 1
+    194          #if I2S_FCLK == 44100 || I2S_FCLK == 48000
+    195          	// MCKOE = 1: Master clock output is enabled
+    196          	// ODD = 0: Real divider value is = I2SDIV*2
+    197          	// I2SDIV[7:0] = 0x04:  I2S linear prescaler
+    198          	SPI2->I2SPR = (0x04 << SPI_I2SPR_I2SDIV_Pos) | SPI_I2SPR_MCKOE;
+    199          	// fFCLK = fPLLI2SR / (256*((2*I2SDIV) + ODD))
+    200          	// Real Frame clock for ideal 44100 Hz:
+    201          	// fFCLK = 90333333.33 / (256*((2*4) + 0)) ~= 44108.073 Hz
+    202          	// Real Frame clock for ideal 48000 Hz:
+    203          	// fFCLK = 98333333.33 / (256*((2*4) + 0)) ~= 48014.323 Hz
+    204          	// fMCLK
+    205          	i2s_mclk = (i2s_clk / (256*((2*4) + 0))) * 256;
+    206          #elif I2S_FCLK == 88200 || I2S_FCLK == 96000
+    207          	// MCKOE = 1: Master clock output is enabled
+    208          	// ODD = 0: Real divider value is = I2SDIV*2
+    209          	// I2SDIV[7:0] = 0x02:  I2S linear prescaler
+    210          	SPI2->I2SPR = (0x02 << SPI_I2SPR_I2SDIV_Pos) | SPI_I2SPR_MCKOE;
+    211          	// fFCLK = fPLLI2SR / (256*((2*I2SDIV) + ODD))
+    212          	// Real Frame clock for ideal 88200 Hz:
+    213          	// fFCLK = 90333333.33 / (256*((2*2) + 0)) ~= 88216.146 Hz
+    214          	// Real Frame clock for ideal 96000 Hz:
+    215          	// fFCLK = 98333333.33 / (256*((2*2) + 0)) ~= 96028.646 Hz
+    216          	// fMCLK
+    217          	i2s_mclk = (i2s_clk / (256*((2*2) + 0))) * 256;
+    218          #elif I2S_FCLK == 176400 || I2S_FCLK == 192000
+    219          	// MCKOE = 1: Master clock output is enabled
+    220          	// ODD = 0: Real divider value is = I2SDIV*2
+    221          	// I2SDIV[7:0] = 0x01:  I2S linear prescaler
+    222          	SPI2->I2SPR = (0x01 << SPI_I2SPR_I2SDIV_Pos) | SPI_I2SPR_MCKOE;
+    223          	// fFCLK = fPLLI2SR / (256*((2*I2SDIV) + ODD))
+    224          	// Real Frame clock for ideal 176400 Hz:
+    225          	// fFCLK = 90333333.33 / (256*((2*1) + 0)) ~= 176432.292 Hz
+    226          	// Real Frame clock for ideal 192000 Hz:
+    227          	// fFCLK = 98333333.33 / (256*((2*1) + 0)) ~= 192057.292 Hz
+    228          	// fMCLK
+    229          	i2s_mclk = (i2s_clk / (256*((2*1) + 0))) * 256;
+    230          #endif
+    231          #else
+    232          #if I2S_FCLK == 44100 || I2S_FCLK == 48000
+    233          #if BYTES_PER_AUDIO_SAMPLE == 2
+    234          	// MCKOE = 1: Master clock output is disabled
+    235          	// ODD = 0: Real divider value is = I2SDIV*2
+    236          	// I2SDIV[7:0] = 0x20:  I2S linear prescaler
+    237          	// CHLEN = 0: 16 bits per audio channel
+    238          	SPI2->I2SPR = (0x20 << SPI_I2SPR_I2SDIV_Pos);
+    239          	// fFCLK = fPLLI2SR / (32*(CHLEN+1)*((2*I2SDIV) + ODD))
+    240          	// Real Frame clock for ideal 44100 Hz:
+    241          	// fFCLK = 90333333.33 / (32*(0+1)*((2*32) + 0)) ~= 44108.073 Hz
+    242          	// Real Frame clock for ideal 48000 Hz:
+    243          	// fFCLK = 98333333.33 / (32*(0+1)*((2*32) + 0)) ~= 48014.323 Hz
+    244          	// fMCLK
+    245          	i2s_mclk = (i2s_clk / (32*(0+1)*((2*32) + 0))) * 256;
+    246          #else
+    247          	// MCKOE = 1: Master clock output is disabled
+    248          	// ODD = 0: Real divider value is = I2SDIV*2
+    249          	// I2SDIV[7:0] = 0x20:  I2S linear prescaler
+    250          	// CHLEN = 1: 32 bits per audio channel
+    251          	SPI2->I2SPR = (0x10 << SPI_I2SPR_I2SDIV_Pos);
+    252          	// fFCLK = fPLLI2SR / (32*(CHLEN+1)*((2*I2SDIV) + ODD))
+    253          	// Real Frame clock for ideal 44100 Hz:
+    254          	// fFCLK = 90333333.33 / (32*(1+1)*((2*16) + 0)) ~= 44108.073 Hz
+    255          	// Real Frame clock for ideal 48000 Hz:
+    256          	// fFCLK = 98333333.33 / (32*(1+1)*((2*16) + 0)) ~= 48014.323 Hz
+    257          	// fMCLK
+    258          	i2s_mclk = (i2s_clk / (32*(1+1)*((2*16) + 0))) * 256;
+    259          #endif
+    260          #elif I2S_FCLK == 88200 || I2S_FCLK == 96000
+    261          #if BYTES_PER_AUDIO_SAMPLE == 2
+    262          	// MCKOE = 1: Master clock output is disabled
+    263          	// ODD = 0: Real divider value is = I2SDIV*2
+    264          	// I2SDIV[7:0] = 0x10:  I2S linear prescaler
+    265          	// CHLEN = 0: 16 bits per audio channel
+    266          	SPI2->I2SPR = (0x10 << SPI_I2SPR_I2SDIV_Pos);
+    267          	// fFCLK = fPLLI2SR / (32*(CHLEN+1)*((2*I2SDIV) + ODD))
+    268          	// Real Frame clock for ideal 88200 Hz:
+    269          	// fFCLK = 90333333.33 / (32*(0+1)*((2*16) + 0)) ~= 88216.146 Hz
+    270          	// Real Frame clock for ideal 96000 Hz:
+    271          	// fFCLK = 98333333.33 / (32*(0+1)*((2*16) + 0)) ~= 96028.646 Hz
+    272          	// fMCLK
+    273          	i2s_mclk = (i2s_clk / (32*(0+1)*((2*16) + 0))) * 256;
+    274          #else
+    275          	// MCKOE = 1: Master clock output is disabled
+    276          	// ODD = 0: Real divider value is = I2SDIV*2
+    277          	// I2SDIV[7:0] = 0x10:  I2S linear prescaler
+    278          	// CHLEN = 1: 32 bits per audio channel
+    279          	SPI2->I2SPR = (0x08 << SPI_I2SPR_I2SDIV_Pos);
+    280          	// fFCLK = fPLLI2SR / (32*(CHLEN+1)*((2*I2SDIV) + ODD))
+    281          	// Real Frame clock for ideal 88200 Hz:
+    282          	// fFCLK = 90333333.33 / (32*(1+1)*((2*8) + 0)) ~= 88216.146 Hz
+    283          	// Real Frame clock for ideal 96000 Hz:
+    284          	// fFCLK = 98333333.33 / (32*(1+1)*((2*8) + 0)) ~= 96028.646 Hz
+    285          	// fMCLK
+    286          	i2s_mclk = (i2s_clk / (32*(1+1)*((2*8) + 0))) * 256;
+    287          #endif
+    288          #elif I2S_FCLK == 176400 || I2S_FCLK == 192000
+    289          #if BYTES_PER_AUDIO_SAMPLE == 2
+    290          	// MCKOE = 1: Master clock output is disabled
+    291          	// ODD = 0: Real divider value is = I2SDIV*2
+    292          	// I2SDIV[7:0] = 0x08:  I2S linear prescaler
+    293          	// CHLEN = 0: 16 bits per audio channel
+    294          	SPI2->I2SPR = (0x08 << SPI_I2SPR_I2SDIV_Pos);
+    295          	// fFCLK = fPLLI2SR / (32*(CHLEN+1)*((2*I2SDIV) + ODD))
+    296          	// Real Frame clock for ideal 176400 Hz:
+    297          	// fFCLK = 90333333.33 / (32*(0+1)*((2*8) + 0)) ~= 176432.292 Hz
+    298          	// Real Frame clock for ideal 192000 Hz:
+    299          	// fFCLK = 98333333.33 / (32*(0+1)*((2*8) + 0)) ~= 192057.292 Hz
+    300          	// fMCLK
+    301          	i2s_mclk = (i2s_clk / (32*(0+1)*((2*8) + 0))) * 256;
+    302          #else
+    303          	// MCKOE = 1: Master clock output is disabled
+    304          	// ODD = 0: Real divider value is = I2SDIV*2
+    305          	// I2SDIV[7:0] = 0x08:  I2S linear prescaler
+    306          	// CHLEN = 1: 32 bits per audio channel
+    307          	SPI2->I2SPR = (0x04 << SPI_I2SPR_I2SDIV_Pos);
+    308          	// fFCLK = fPLLI2SR / (32*(CHLEN+1)*((2*I2SDIV) + ODD))
+    309          	// Real Frame clock for ideal 176400 Hz:
+    310          	// fFCLK = 90333333.33 / (32*(1+1)*((2*4) + 0)) ~= 176432.292 Hz
+    311          	// Real Frame clock for ideal 192000 Hz:
+    312          	// fFCLK = 98333333.33 / (32*(1+1)*((2*4) + 0)) ~= 192057.292 Hz
+    313          	// fMCLK
+    314          	i2s_mclk = (i2s_clk / (32*(1+1)*((2*4) + 0))) * 256;
+    315          #endif
+    316          #endif
+    317          #endif
+    318          
+    319          	//-----------------------------
+    320          	// I2SMOD = 1: I2S mode is selected
+    321          	// I2SE = 1: I2S peripheral is enabled
+    322          	// CKPOL = 0(??): Sample clock inactive state is low level
+    323          	reg = SPI_I2SCFGR_I2SMOD | SPI_I2SCFGR_I2SE;
+    324          	if (master_transmit)
+    325          	{
+    326          		// I2SCFG[9:8] = 10: I2S configuration mode "Master - transmit"
+    327          		reg |= SPI_I2SCFGR_I2SCFG_1;
+    328          	}
+    329          	else
+    330          	{
+    331          		// I2SCFG[9:8] = 11: I2S configuration mode "Master - receive"
+    332          		reg |= SPI_I2SCFGR_I2SCFG_1 | SPI_I2SCFGR_I2SCFG_0;
+    333          	}
+    334          #if I2S_BITRES == 16
+    335          	// DATLEN[2:1] = 00: 16-bit data length
+    336          	// CHLEN = 0: 16 bits per audio channel
+    337          #elif I2S_BITRES == 24
+    338          	// DATLEN[2:1] = 01: 24-bit data length
+    339          	// CHLEN = 1: 32 bits per audio channel
+    340          	reg |= SPI_I2SCFGR_DATLEN_0 | SPI_I2SCFGR_CHLEN;
+    341          #elif I2S_BITRES == 32
+    342          	// DATLEN[2:1] = 10: 32-bit data length
+    343          	// CHLEN = 1: 32 bits per audio channel
+    344          	reg |= SPI_I2SCFGR_DATLEN_1 | SPI_I2SCFGR_CHLEN;
+    345          #endif
+    346          	SPI2->I2SCFGR = reg;
+    347          }
+    348          
+    349          //--------------------------------------------
+    350          // Full reset, see comment to hal_i2s_stop_dma_tx() function
+    351          void hal_spi_i2s_reset(void)
+    352          {
+    353          	RCC->APB1RSTR |= RCC_APB1RSTR_SPI2RST;
+    354          	RCC->APB1RSTR &= ~RCC_APB1RSTR_SPI2RST;
+    355          }
+    356          
+    357          //--------------------------------------------
+    358          double hal_spi_i2s_get_mclk(void)
+    359          {
+    360          	return i2s_mclk;
+    361          }
+    362          
+    363          //--------------------------------------------
+    364          void hal_spi_i2s_init_dma_tx_buf(void)
+    365          {
+    366          	// DMA1 clock enable
+    367          	RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+    368          
+    369          	// DMA stream disable
+    370          	DMA1_Stream4->CR &= ~DMA_SxCR_EN;
+    371          	while (DMA1_Stream4->CR & DMA_SxCR_EN);
+    372          
+    373          	DMA1_Stream4->CR =                     // Channel selection: (000) channel 0
+    374          	                                       // Memory burst transfer configuration: (00) single transfer
+    375          	                                       // Peripheral burst transfer configuration: (00) single transfer
+    376          	                                       // Current target: (0) ignored
+    377          	                                       // Double buffer mode: (0) No buffer switching at the end of transfer
+    378          	                    DMA_SxCR_PL_0 | DMA_SxCR_PL_1 | // Priority level: (11) Very high
+    379          	                                       // Peripheral increment offset size: (0) ignored
+    380          	                    DMA_SxCR_MSIZE_0 | // Memory data size: (01) 16-bit
+    381          	                    DMA_SxCR_PSIZE_0 | // Peripheral data size: (01) 16-bit
+    382          	                    DMA_SxCR_MINC |    // Memory increment mode: (1) incremented after each data transfer
+    383          	                                       // Peripheral increment mode: (0) Peripheral address pointer is fixed
+    384          	                                       // Circular mode: (0) disabled
+    385          	                    DMA_SxCR_DIR_0     // Data transfer direction: (01) Memory-to-peripheral
+    386          	                                     ; // Peripheral flow controller: (0) DMA is the flow controller
+    387          
+    388          	DMA1_Stream4->FCR =                     // FIFO error interrupt: (0) disabled
+    389          	                                        // FIFO status: These bits are read-only
+    390          	                    DMA_SxFCR_DMDIS   | // Direct mode: (1) disable
+    391          	                    DMA_SxFCR_FTH_0 | DMA_SxFCR_FTH_1; // FIFO threshold selection: (11) full FIFO
+    392          
+    393          #if 1
+    394          	// set spi2 dma global interrupt priority
+    395          	NVIC_SetPriority(DMA1_Stream4_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), DMA_SPI2_IRQ_PREEMPT_PRIORITY, 0));
+    396          	// enable spi2 dma global interrupt
+    397          	NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+    398          #endif
+    399          }
+    400          
+    401          //--------------------------------------------
+    402          void hal_spi_i2s_init_dma_rx_buf(void)
+    403          {
+    404          	// DMA1 clock enable
+    405          	RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+    406          
+    407          	// DMA stream disable
+    408          	DMA1_Stream3->CR &= ~DMA_SxCR_EN;
+    409          	while (DMA1_Stream3->CR & DMA_SxCR_EN);
+    410          
+    411          	DMA1_Stream3->CR =                     // Channel selection: (000) channel 0
+    412          	                                       // Memory burst transfer configuration: (00) single transfer
+    413          	                                       // Peripheral burst transfer configuration: (00) single transfer
+    414          	                                       // Current target: (0) ignored
+    415          	                                       // Double buffer mode: (0) No buffer switching at the end of transfer
+    416          	                    DMA_SxCR_PL_0 | DMA_SxCR_PL_1 | // Priority level: (11) Very high
+    417          	                                       // Peripheral increment offset size: (0) ignored
+    418          	                    DMA_SxCR_MSIZE_0 | // Memory data size: (01) 16-bit
+    419          	                    DMA_SxCR_PSIZE_0 | // Peripheral data size: (01) 16-bit
+    420          	                    DMA_SxCR_MINC      // Memory increment mode: (1) incremented after each data transfer
+    421          	                                       // Peripheral increment mode: (0) Peripheral address pointer is fixed
+    422          	                                       // Circular mode: (0) disabled
+    423          	                                       // Data transfer direction: (00) Peripheral-to-memory
+    424          	                                     ; // Peripheral flow controller: (0) DMA is the flow controller
+    425          
+    426          	DMA1_Stream3->FCR =                    // FIFO error interrupt: (0) disabled
+    427          	                                       // FIFO status: These bits are read-only
+    428          	                    DMA_SxFCR_DMDIS |  // Direct mode: (1) disable
+    429          	                    DMA_SxFCR_FTH_0 | DMA_SxFCR_FTH_1; // FIFO threshold selection: (11) full FIFO
+    430          
+    431          #if 1
+    432          	// set spi2 dma global interrupt priority
+    433          	NVIC_SetPriority(DMA1_Stream3_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), DMA_SPI2_IRQ_PREEMPT_PRIORITY, 0));
+    434          	// enable spi2 dma global interrupt
+    435          	NVIC_EnableIRQ(DMA1_Stream3_IRQn);
+    436          #endif
+    437          }
+    438          
+    439          //--------------------------------------------
+    440          void hal_spi_i2s_init_dma_tx_buf_cycle(void)
+    441          {
+    442          	// DMA1 clock enable
+    443          	RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+    444          
+    445          	// DMA stream disable
+    446          	DMA1_Stream4->CR &= ~DMA_SxCR_EN;
+    447          	while (DMA1_Stream4->CR & DMA_SxCR_EN);
+    448          
+    449          	DMA1_Stream4->CR =                     // Channel selection: (000) channel 0
+    450          	                                       // Memory burst transfer configuration: (00) single transfer
+    451          	                                       // Peripheral burst transfer configuration: (00) single transfer
+    452          	                                       // Current target: (0) ignored
+    453          	                                       // Double buffer mode: (0) No buffer switching at the end of transfer
+    454          	                    DMA_SxCR_PL_0 | DMA_SxCR_PL_1 | // Priority level: (11) Very high
+    455          	                                       // Peripheral increment offset size: (0) ignored
+    456          	                    DMA_SxCR_MSIZE_0 | // Memory data size: (01) 16-bit
+    457          	                    DMA_SxCR_PSIZE_0 | // Peripheral data size: (01) 16-bit
+    458          	                    DMA_SxCR_MINC |    // Memory increment mode: (1) incremented after each data transfer
+    459          	                                       // Peripheral increment mode: (0) Peripheral address pointer is fixed
+    460          	                    DMA_SxCR_CIRC |    // Circular mode: (1) enabled
+    461          	                    DMA_SxCR_DIR_0     // Data transfer direction: (01) Memory-to-peripheral
+    462          	                                     ; // Peripheral flow controller: (0) DMA is the flow controller
+    463          
+    464          	DMA1_Stream4->FCR =                    // FIFO error interrupt: (0) disabled
+    465          	                                       // FIFO status: These bits are read-only
+    466          	                    DMA_SxFCR_DMDIS  | // Direct mode: (1) disable
+    467          	                    DMA_SxFCR_FTH_0 | DMA_SxFCR_FTH_1; // FIFO threshold selection: (11) full FIFO
+    468          
+    469          #if 1
+    470          	// set spi2 dma global interrupt priority
+    471          	NVIC_SetPriority(DMA1_Stream4_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), DMA_SPI2_IRQ_PREEMPT_PRIORITY, 0));
+    472          	// enable spi2 dma global interrupt
+    473          	NVIC_EnableIRQ(DMA1_Stream4_IRQn);
+    474          #endif
+    475          }
+    476          
+    477          //--------------------------------------------
+    478          void hal_spi_i2s_init_dma_rx_buf_cycle(void)
+    479          {
+    480          	// DMA1 clock enable
+    481          	RCC->AHB1ENR |= RCC_AHB1ENR_DMA1EN;
+    482          
+    483          	// DMA stream disable
+    484          	DMA1_Stream3->CR &= ~DMA_SxCR_EN;
+    485          	while (DMA1_Stream3->CR & DMA_SxCR_EN);
+    486          
+    487          	DMA1_Stream3->CR =                     // Channel selection: (000) channel 0
+    488          	                                       // Memory burst transfer configuration: (00) single transfer
+    489          	                                       // Peripheral burst transfer configuration: (00) single transfer
+    490          	                                       // Current target: (0) ignored
+    491          	                                       // Double buffer mode: (0) No buffer switching at the end of transfer
+    492          	                    DMA_SxCR_PL_0 | DMA_SxCR_PL_1 | // Priority level: (11) Very high
+    493          	                                       // Peripheral increment offset size: (0) ignored
+    494          	                    DMA_SxCR_MSIZE_0 | // Memory data size: (01) 16-bit
+    495          	                    DMA_SxCR_PSIZE_0 | // Peripheral data size: (01) 16-bit
+    496          	                    DMA_SxCR_MINC |    // Memory increment mode: (1) incremented after each data transfer
+    497          	                                       // Peripheral increment mode: (0) Peripheral address pointer is fixed
+    498          	                    DMA_SxCR_CIRC      // Circular mode: (1) enabled
+    499          	                                       // Data transfer direction: (00) Peripheral-to-memory
+    500          	                                     ; // Peripheral flow controller: (0) DMA is the flow controller
+    501          
+    502          	DMA1_Stream3->FCR =                    // FIFO error interrupt: (0) disabled
+    503          	                                       // FIFO status: These bits are read-only
+    504          	                    DMA_SxFCR_DMDIS  | // Direct mode: (1) disable
+    505          	                    DMA_SxFCR_FTH_0 | DMA_SxFCR_FTH_1; // FIFO threshold selection: (11) full FIFO
+    506          
+    507          #if 1
+    508          	// set spi2 dma global interrupt priority
+    509          	NVIC_SetPriority(DMA1_Stream3_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), DMA_SPI2_IRQ_PREEMPT_PRIORITY, 0));
+    510          	// enable spi2 dma global interrupt
+    511          	NVIC_EnableIRQ(DMA1_Stream3_IRQn);
+    512          #endif
+    513          }
+    514          
+    515          //--------------------------------------------
+    516          void hal_spi_i2s_write_dma_buf(void *txbuf, uint32_t length)
+    517          {
+    518          	// SPI2 DMA enable
+    519          	SPI2->CR2 |= SPI_CR2_TXDMAEN;
+    520          
+    521          	// DMA stream disable
+    522          	DMA1_Stream4->CR &= ~DMA_SxCR_EN;
+    523          	while (DMA1_Stream4->CR & DMA_SxCR_EN);
+    524          
+    525          	// Clear all the interrupt flags
+    526          	DMA1->HIFCR = DMA_HIFCR_CTCIF4 | DMA_HIFCR_CTEIF4 | DMA_HIFCR_CDMEIF4 | DMA_HIFCR_CFEIF4 | DMA_HIFCR_CHTIF4;
+    527          
+    528          	// Set the DMA addresses
+    529          	DMA1_Stream4->PAR = (uint32_t)&(SPI2->DR);
+    530          	DMA1_Stream4->M0AR = (uint32_t)txbuf;
+    531          
+    532          	// Set the number of 16-bit words to transfer
+    533          	DMA1_Stream4->NDTR = length / sizeof(uint16_t);
+    534          
+    535          	// Enable interrupts
+    536          	DMA1_Stream4->CR |= DMA_SxCR_TCIE | DMA_SxCR_TEIE | DMA_SxCR_HTIE;
+    537          	DMA1_Stream4->FCR |= DMA_SxFCR_FEIE;
+    538          
+    539          	// DMA stream enable
+    540          	DMA1_Stream4->CR |= DMA_SxCR_EN;
+    541          	while (!(DMA1_Stream4->CR & DMA_SxCR_EN));
+    542          }
+    543          
+    544          //--------------------------------------------
+    545          void hal_spi_i2s_read_dma_buf(void *rxbuf, uint32_t length)
+    546          {
+    547          	// SPI2 DMA enable
+    548          	SPI2->CR2 |= SPI_CR2_RXDMAEN;
+    549          
+    550          	// DMA stream disable
+    551          	DMA1_Stream3->CR &= ~DMA_SxCR_EN;
+    552          	while (DMA1_Stream3->CR & DMA_SxCR_EN);
+    553          
+    554          	// Clear all the interrupt flags
+    555          	DMA1->LIFCR = DMA_LIFCR_CTCIF3 | DMA_LIFCR_CTEIF3 | DMA_LIFCR_CDMEIF3 | DMA_LIFCR_CFEIF3 | DMA_LIFCR_CHTIF3;
+    556          
+    557          	// Set the DMA addresses
+    558          	DMA1_Stream3->PAR = (uint32_t)&(SPI2->DR);
+    559          	DMA1_Stream3->M0AR = (uint32_t)rxbuf;
+    560          
+    561          	// Set the number of 16-bit words to transfer
+    562          	DMA1_Stream3->NDTR = length / sizeof(uint16_t);
+    563          
+    564          	// Enable interrupts
+    565          	DMA1_Stream3->CR |= DMA_SxCR_TCIE | DMA_SxCR_TEIE | DMA_SxCR_HTIE;
+    566          	DMA1_Stream3->FCR |= DMA_SxFCR_FEIE;
+    567          
+    568          	// DMA stream enable
+    569          	DMA1_Stream3->CR |= DMA_SxCR_EN;
+    570          	while (!(DMA1_Stream3->CR & DMA_SxCR_EN));
+    571          }
+    572          
+    573          //--------------------------------------------
+    574          void hal_spi_i2s_write_dma_buf_stop(void *txbuf, uint32_t length, uint32_t timeout)
+    575          {
+    576          	uint32_t start;
+    577          
+    578          	// SPI2 DMA enable
+    579          	SPI2->CR2 |= SPI_CR2_TXDMAEN;
+    580          
+    581          	// DMA stream disable
+    582          	DMA1_Stream4->CR &= ~DMA_SxCR_EN;
+    583          	while (DMA1_Stream4->CR & DMA_SxCR_EN);
+    584          
+    585          	// Clear all the interrupt flags
+    586          	DMA1->HIFCR = DMA_HIFCR_CTCIF4 | DMA_HIFCR_CTEIF4 | DMA_HIFCR_CDMEIF4 | DMA_HIFCR_CFEIF4 | DMA_HIFCR_CHTIF4;
+    587          
+    588          	// Set the DMA addresses
+    589          	DMA1_Stream4->PAR = (uint32_t)&(SPI2->DR);
+    590          	DMA1_Stream4->M0AR = (uint32_t)txbuf;
+    591          
+    592          	// Set the number of 16-bit words to transfer
+    593          	DMA1_Stream4->NDTR = length / sizeof(uint16_t);
+    594          
+    595          	// Enable interrupts
+    596          	DMA1_Stream4->CR |= DMA_SxCR_TCIE | DMA_SxCR_TEIE | DMA_SxCR_HTIE;
+    597          	DMA1_Stream4->FCR |= DMA_SxFCR_FEIE;
+    598          
+    599          	// DMA stream enable
+    600          	DMA1_Stream4->CR |= DMA_SxCR_EN;
+    601          	while (!(DMA1_Stream4->CR & DMA_SxCR_EN));
+    602          
+    603          	for (start = get_platform_counter();;)
+    604          	{
+    605          		if ((get_platform_counter() - start) >= timeout)
+    606          		{
+    607          			DMA1_Stream4->CR &= ~DMA_SxCR_EN;
+    608          			while (DMA1_Stream4->CR & DMA_SxCR_EN);
+    609          		}
+    610          		if (!(DMA1_Stream4->CR & DMA_SxCR_EN))
+    611          		{
+    612          			while ((SPI2->SR & SPI_SR_BSY));
+    613          			// SPI2 DMA disable
+    614          			SPI2->CR2 &= ~SPI_CR2_TXDMAEN;
+    615          			return;
+    616          		}
+    617          	}
+    618          }
+    619          
+    620          //--------------------------------------------
+    621          // Using this function while the DMA controller is running may cause
+    622          // the Channel side pointer to stop in the wrong position (SPIx_SR CHSIDE = 1),
+    623          // which will affect the next DMA start on transmitting via the I2S interface.
+    624          // Synchronization of receiving data from channel 0 does not work as expected:
+    625          // while (SPI2->SR & SPI_SR_CHSIDE);
+    626          // while (!SPI2->SR & SPI_SR_CHSIDE);
+    627          // Only one way remains - a complete reset of the settings and re-initialization:
+    628          // RCC->APB1RSTR |= RCC_APB1RSTR_SPI2RST;
+    629          // RCC->APB1RSTR &= ~RCC_APB1RSTR_SPI2RST;
+    630          //--------------------------------------------
+    631          void hal_spi_i2s_stop_dma_tx(void)
+    632          {
+    633          	// DMA stream disable
+    634          	DMA1_Stream4->CR &= ~DMA_SxCR_EN;
+    635          	while (DMA1_Stream4->CR & DMA_SxCR_EN);
+    636          	// SPI2 DMA disable
+    637          	SPI2->CR2 &= ~SPI_CR2_TXDMAEN;
+    638          }
+    639          
+    640          #if 1
+    641          //--------------------------------------------
+    642          __WEAK void hal_spi_i2s_tx_irq_htif_callback(void)
+    643          {
+    644          }
+    645          
+    646          //--------------------------------------------
+    647          __WEAK void hal_spi_i2s_tx_irq_tcif_callback(void)
+    648          {
+    649          }
+    650          
+    651          //--------------------------------------------
+    652          void DMA1_Stream4_IRQHandler(void)
+    653          {
+    654          	if (DMA1->HISR & DMA_HISR_TCIF4)
+    655          	{
+    656          		DMA1->HIFCR |= DMA_HIFCR_CTCIF4;
+    657          		hal_spi_i2s_tx_irq_tcif_callback();
+    658          	}
+    659          	if (DMA1->HISR & DMA_HISR_HTIF4)
+    660          	{
+    661          		DMA1->HIFCR |= DMA_HIFCR_CHTIF4;
+    662          		hal_spi_i2s_tx_irq_htif_callback();
+    663          	}
+    664          	if (DMA1->HISR & DMA_HISR_TEIF4)
+    665          	{
+    666          		DMA1->HIFCR |= DMA_HIFCR_CTEIF4;
+    667          	}
+    668          	if (DMA1->HISR & DMA_HISR_DMEIF4)
+    669          	{
+    670          		DMA1->HIFCR |= DMA_HIFCR_CDMEIF4;
+    671          	}
+    672          	if (DMA1->HISR & DMA_HISR_FEIF4)
+    673          	{
+    674          		DMA1->HIFCR |= DMA_HIFCR_CFEIF4;
+    675          	}
+    676          }
+    677          #endif
+    678          
+    679          #if 1
+    680          //--------------------------------------------
+    681          __WEAK void hal_spi_i2s_rx_irq_htif_callback(void)
+    682          {
+    683          }
+    684          
+    685          //--------------------------------------------
+    686          __WEAK void hal_spi_i2s_rx_irq_tcif_callback(void)
+    687          {
+    688          }
+    689          
+    690          //--------------------------------------------
+    691          void DMA1_Stream3_IRQHandler(void)
+    692          {
+    693          	if (DMA1->LISR & DMA_LISR_TCIF3)
+    694          	{
+    695          		DMA1->LIFCR |= DMA_LIFCR_CTCIF3;
+    696          		hal_spi_i2s_rx_irq_tcif_callback();
+    697          	}
+    698          	if (DMA1->LISR & DMA_LISR_HTIF3)
+    699          	{
+    700          		DMA1->LIFCR |= DMA_LIFCR_CHTIF3;
+    701          		hal_spi_i2s_rx_irq_htif_callback();
+    702          	}
+    703          	if (DMA1->LISR & DMA_LISR_TEIF3)
+    704          	{
+    705          		DMA1->LIFCR |= DMA_LIFCR_CTEIF3;
+    706          	}
+    707          	if (DMA1->LISR & DMA_LISR_DMEIF3)
+    708          	{
+    709          		DMA1->LIFCR |= DMA_LIFCR_CDMEIF3;
+    710          	}
+    711          	if (DMA1->LISR & DMA_LISR_FEIF3)
+    712          	{
+    713          		DMA1->LIFCR |= DMA_LIFCR_CFEIF3;
+    714          	}
+    715          }
+    716          #endif
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   DMA1_Stream3_IRQHandler
+         8   -> hal_spi_i2s_rx_irq_htif_callback
+         8   -> hal_spi_i2s_rx_irq_tcif_callback
+       8   DMA1_Stream4_IRQHandler
+         8   -> hal_spi_i2s_tx_irq_htif_callback
+         8   -> hal_spi_i2s_tx_irq_tcif_callback
+      12   NVIC_EncodePriority
+       0   __NVIC_EnableIRQ
+       0   __NVIC_GetPriorityGrouping
+       4   __NVIC_SetPriority
+      16   hal_spi_i2s_config
+        16   -> __aeabi_ddiv
+        16   -> __aeabi_dmul
+       0   hal_spi_i2s_get_mclk
+       8   hal_spi_i2s_init
+         8   -> hw_cfg_pin
+       8   hal_spi_i2s_init_dma_rx_buf
+         8   -> NVIC_EncodePriority
+         8   -> __NVIC_EnableIRQ
+         8   -> __NVIC_GetPriorityGrouping
+         8   -> __NVIC_SetPriority
+       8   hal_spi_i2s_init_dma_rx_buf_cycle
+         8   -> NVIC_EncodePriority
+         8   -> __NVIC_EnableIRQ
+         8   -> __NVIC_GetPriorityGrouping
+         8   -> __NVIC_SetPriority
+       8   hal_spi_i2s_init_dma_tx_buf
+         8   -> NVIC_EncodePriority
+         8   -> __NVIC_EnableIRQ
+         8   -> __NVIC_GetPriorityGrouping
+         8   -> __NVIC_SetPriority
+       8   hal_spi_i2s_init_dma_tx_buf_cycle
+         8   -> NVIC_EncodePriority
+         8   -> __NVIC_EnableIRQ
+         8   -> __NVIC_GetPriorityGrouping
+         8   -> __NVIC_SetPriority
+       4   hal_spi_i2s_read_dma_buf
+       0   hal_spi_i2s_reset
+       0   hal_spi_i2s_rx_irq_htif_callback
+       0   hal_spi_i2s_rx_irq_tcif_callback
+       0   hal_spi_i2s_stop_dma_tx
+       0   hal_spi_i2s_tx_irq_htif_callback
+       0   hal_spi_i2s_tx_irq_tcif_callback
+       4   hal_spi_i2s_write_dma_buf
+      32   hal_spi_i2s_write_dma_buf_stop
+        32   -> get_platform_counter
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       8  ??DataTable11
+       4  ??DataTable16
+       4  ??DataTable16_1
+       4  ??DataTable16_10
+       4  ??DataTable16_11
+       4  ??DataTable16_12
+       4  ??DataTable16_13
+       4  ??DataTable16_14
+       4  ??DataTable16_15
+       4  ??DataTable16_16
+       4  ??DataTable16_17
+       4  ??DataTable16_18
+       4  ??DataTable16_19
+       4  ??DataTable16_2
+       4  ??DataTable16_20
+       4  ??DataTable16_21
+       4  ??DataTable16_22
+       4  ??DataTable16_23
+       4  ??DataTable16_24
+       4  ??DataTable16_25
+       4  ??DataTable16_26
+       4  ??DataTable16_27
+       4  ??DataTable16_28
+       4  ??DataTable16_29
+       4  ??DataTable16_3
+       4  ??DataTable16_30
+       4  ??DataTable16_31
+       4  ??DataTable16_32
+       4  ??DataTable16_33
+       4  ??DataTable16_34
+       4  ??DataTable16_35
+       4  ??DataTable16_36
+       4  ??DataTable16_4
+       4  ??DataTable16_5
+       4  ??DataTable16_6
+       4  ??DataTable16_7
+       4  ??DataTable16_8
+       4  ??DataTable16_9
+      94  DMA1_Stream3_IRQHandler
+      94  DMA1_Stream4_IRQHandler
+      64  NVIC_EncodePriority
+      32  __NVIC_EnableIRQ
+      12  __NVIC_GetPriorityGrouping
+      48  __NVIC_SetPriority
+      88  hal_spi_i2s_config
+      10  hal_spi_i2s_get_mclk
+     106  hal_spi_i2s_init
+      74  hal_spi_i2s_init_dma_rx_buf
+      66  hal_spi_i2s_init_dma_rx_buf_cycle
+      74  hal_spi_i2s_init_dma_tx_buf
+      66  hal_spi_i2s_init_dma_tx_buf_cycle
+      90  hal_spi_i2s_read_dma_buf
+      22  hal_spi_i2s_reset
+       2  hal_spi_i2s_rx_irq_htif_callback
+       2  hal_spi_i2s_rx_irq_tcif_callback
+      28  hal_spi_i2s_stop_dma_tx
+       2  hal_spi_i2s_tx_irq_htif_callback
+       2  hal_spi_i2s_tx_irq_tcif_callback
+      88  hal_spi_i2s_write_dma_buf
+     176  hal_spi_i2s_write_dma_buf_stop
+       8  i2s_mclk
+
+ 
+     8 bytes in section .bss
+ 1'396 bytes in section .text
+ 
+ 1'388 bytes of CODE memory (+ 8 bytes shared)
+     8 bytes of DATA memory
+
+Errors: none
+Warnings: none

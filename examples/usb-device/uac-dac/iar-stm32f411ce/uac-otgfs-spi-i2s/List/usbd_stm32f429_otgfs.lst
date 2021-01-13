@@ -1,0 +1,700 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V8.50.1.245/W32 for ARM         09/Jan/2021  10:06:23
+# Copyright 1999-2020 IAR Systems AB.
+#
+#    Cpu mode             
+#    Endian            =  little
+#    Source file       =
+#        C:\Programming\Microcontrollers\Devices\3rd-party\drivers\libusb_stm32\src\usbd_stm32f429_otgfs.c
+#    Command line      =
+#        -f C:\Users\18EE~1\AppData\Local\Temp\EW7BC4.tmp
+#        (C:\Programming\Microcontrollers\Devices\3rd-party\drivers\libusb_stm32\src\usbd_stm32f429_otgfs.c
+#        -D STM32F411xE -D HSE_VALUE=25000000 -D USBD_OTGFS --preprocess=s
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -lcN
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj
+#        --no_cse --no_unroll --no_inline --no_code_motion --no_tbaa
+#        --no_clustering --no_scheduling --debug --endian=little
+#        --cpu=Cortex-M4 -e --fpu=VFPv4_sp --dlib_config "C:\Program Files
+#        (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\inc\c\DLib_Config_Normal.h" -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\src\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\hal\inc\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\drv\audio-out\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\class\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\uac-dac\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\cpu\stm32f411ce\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\platform\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\core\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\device\ST\STM32F4xx\Include\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\libusb_stm32\inc\
+#        -On)
+#    Locale            =  C
+#    List file         =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List\usbd_stm32f429_otgfs.lst
+#    Object file       =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\usbd_stm32f429_otgfs.o
+#    Runtime model:       
+#      __SystemLibrary =  DLib
+#      __dlib_version  =  6
+#
+###############################################################################
+
+C:\Programming\Microcontrollers\Devices\3rd-party\drivers\libusb_stm32\src\usbd_stm32f429_otgfs.c
+      1          /* This file is the part of the Lightweight USB device Stack for STM32 microcontrollers
+      2           *
+      3           * Copyright ©2016 Dmitry Filimonchuk <dmitrystu[at]gmail[dot]com>
+      4           * Modifications Copyright (c) 2018-2020 Vladimir Alemasov
+      5           *
+      6           * Licensed under the Apache License, Version 2.0 (the "License");
+      7           * you may not use this file except in compliance with the License.
+      8           * You may obtain a copy of the License at
+      9           *   http://www.apache.org/licenses/LICENSE-2.0
+     10           * Unless required by applicable law or agreed to in writing, software
+     11           * distributed under the License is distributed on an "AS IS" BASIS,
+     12           * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     13           * See the License for the specific language governing permissions and
+     14           * limitations under the License.
+     15           */
+     16          
+     17          #include "platform.h"
+     18          #include <stdint.h>
+     19          #include <stdbool.h>
+     20          #include "usb_std.h"
+     21          #include "usbd_core.h"
+     22          
+     23          #define MAX_EP          4
+     24          #define MAX_RX_PACKET   512  /* in bytes */
+     25          #define MAX_CONTROL_EP  1
+     26          #define MAX_FIFO_SZ     320  /* in 32-bit chunks */
+     27          
+     28          #define RX_FIFO_SZ      ((4 * MAX_CONTROL_EP + 6) + ((MAX_RX_PACKET / 4) + 1) + (MAX_EP * 2) + 1) /* in 32-bit chunks */
+     29          
+     30          #define STATUS_VAL(x)   (USBD_HW_ADDRFST | (x))
+     31          
+     32          static USB_OTG_GlobalTypeDef * const OTG  = (void*)(USB_OTG_FS_PERIPH_BASE + USB_OTG_GLOBAL_BASE);
+     33          static USB_OTG_DeviceTypeDef * const OTGD = (void*)(USB_OTG_FS_PERIPH_BASE + USB_OTG_DEVICE_BASE);
+     34          static volatile uint32_t * const OTGPCTL  = (void*)(USB_OTG_FS_PERIPH_BASE + USB_OTG_PCGCCTL_BASE);
+     35          
+     36          
+     37          inline static uint32_t* EPFIFO(uint32_t ep) {
+     38              return (uint32_t*)(USB_OTG_FS_PERIPH_BASE + USB_OTG_FIFO_BASE + (ep << 12));
+     39          }
+     40          
+     41          inline static USB_OTG_INEndpointTypeDef* EPIN(uint32_t ep) {
+     42              return (void*)(USB_OTG_FS_PERIPH_BASE + USB_OTG_IN_ENDPOINT_BASE + (ep << 5));
+     43          }
+     44          
+     45          inline static USB_OTG_OUTEndpointTypeDef* EPOUT(uint32_t ep) {
+     46              return (void*)(USB_OTG_FS_PERIPH_BASE + USB_OTG_OUT_ENDPOINT_BASE + (ep << 5));
+     47          }
+     48          
+     49          inline static void Flush_RX(void) {
+     50              _BST(OTG->GRSTCTL, USB_OTG_GRSTCTL_RXFFLSH);
+     51              _WBC(OTG->GRSTCTL, USB_OTG_GRSTCTL_RXFFLSH);
+     52          }
+     53          
+     54          inline static void Flush_TX(uint8_t ep) {
+     55              _BMD(OTG->GRSTCTL, USB_OTG_GRSTCTL_TXFNUM,
+     56                   _VAL2FLD(USB_OTG_GRSTCTL_TXFNUM, ep) | USB_OTG_GRSTCTL_TXFFLSH);
+     57              _WBC(OTG->GRSTCTL, USB_OTG_GRSTCTL_TXFFLSH);
+     58          }
+     59          
+     60          static uint32_t getinfo(void) {
+     61              if (!(RCC->AHB2ENR & RCC_AHB2ENR_OTGFSEN)) return STATUS_VAL(0);
+     62              if (!(OTGD->DCTL & USB_OTG_DCTL_SDIS)) return STATUS_VAL(USBD_HW_ENABLED | USBD_HW_SPEED_FS);
+     63              return STATUS_VAL(USBD_HW_ENABLED);
+     64          }
+     65          
+     66          static void ep_setstall(uint8_t ep, bool stall) {
+     67              if (ep & 0x80) {
+     68                  ep &= 0x7F;
+     69                  uint32_t _t = EPIN(ep)->DIEPCTL;
+     70                  if (_t & USB_OTG_DIEPCTL_USBAEP) {
+     71                      if (stall) {
+     72                          _BST(_t, USB_OTG_DIEPCTL_STALL);
+     73                      } else {
+     74                          _BMD(_t, USB_OTG_DIEPCTL_STALL,
+     75                               USB_OTG_DIEPCTL_SD0PID_SEVNFRM | USB_OTG_DIEPCTL_CNAK);
+     76                      }
+     77                      EPIN(ep)->DIEPCTL = _t;
+     78                  }
+     79              } else {
+     80                  uint32_t _t = EPOUT(ep)->DOEPCTL;
+     81                  if (_t & USB_OTG_DOEPCTL_USBAEP) {
+     82                      if (stall) {
+     83                          _BST(_t, USB_OTG_DOEPCTL_STALL);
+     84                      } else {
+     85                          _BMD(_t, USB_OTG_DOEPCTL_STALL,
+     86                               USB_OTG_DOEPCTL_SD0PID_SEVNFRM | USB_OTG_DOEPCTL_CNAK);
+     87                      }
+     88                      EPOUT(ep)->DOEPCTL = _t;
+     89                  }
+     90              }
+     91          }
+     92          
+     93          static bool ep_isstalled(uint8_t ep) {
+     94              if (ep & 0x80) {
+     95                  ep &= 0x7F;
+     96                  return (EPIN(ep)->DIEPCTL & USB_OTG_DIEPCTL_STALL) ? true : false;
+     97              } else {
+     98                  return (EPOUT(ep)->DOEPCTL & USB_OTG_DOEPCTL_STALL) ? true : false;
+     99              }
+    100          }
+    101          
+    102          static void enable(bool enable) {
+    103              if (enable) {
+    104                  /* enabling USB_OTG in RCC */
+    105                  _BST(RCC->AHB2ENR, RCC_AHB2ENR_OTGFSEN);
+    106                  /* waiting AHB ready */
+    107                  _WBS(OTG->GRSTCTL, USB_OTG_GRSTCTL_AHBIDL);
+    108                  /* configure OTG as device */
+    109                  _BMD(OTG->GUSBCFG,
+    110                       USB_OTG_GUSBCFG_SRPCAP | _VAL2FLD(USB_OTG_GUSBCFG_TRDT, 0x0F),
+    111                       USB_OTG_GUSBCFG_FDMOD  | _VAL2FLD(USB_OTG_GUSBCFG_TRDT, 0x06));
+    112                  /* configuring Vbus sense and SOF output */
+    113          #if defined (USBD_VBUS_DETECT) && defined(USBD_SOF_OUT)
+    114                  OTG->GCCFG = USB_OTG_GCCFG_VBUSBSEN | USB_OTG_GCCFG_SOFOUTEN;
+    115          #elif defined(USBD_VBUS_DETECT)
+    116                  OTG->GCCFG = USB_OTG_GCCFG_VBUSBSEN;
+    117          #elif defined(USBD_SOF_OUT)
+    118                  OTG->GCCFG = USB_OTG_GCCFG_NOVBUSSENS | USB_OTG_GCCFG_SOFOUTEN;
+    119          #else
+    120                  OTG->GCCFG = USB_OTG_GCCFG_NOVBUSSENS;
+    121          #endif
+    122                  /* enable PHY clock */
+    123                  *OTGPCTL = 0;
+    124                  /* soft disconnect device */
+    125                  _BST(OTGD->DCTL, USB_OTG_DCTL_SDIS);
+    126                  /* Setup USB FS speed and frame interval */
+    127                  _BMD(OTGD->DCFG, USB_OTG_DCFG_PERSCHIVL | USB_OTG_DCFG_DSPD,
+    128                       _VAL2FLD(USB_OTG_DCFG_PERSCHIVL, 0) | _VAL2FLD(USB_OTG_DCFG_DSPD, 0x03));
+    129                  /* setting max RX FIFO size */
+    130                  OTG->GRXFSIZ = RX_FIFO_SZ;
+    131                  /* setting up EP0 TX FIFO SZ as 64 bytes */
+    132                  OTG->DIEPTXF0_HNPTXFSIZ = RX_FIFO_SZ | (0x10 << 16);
+    133                  /* unmask EP interrupts */
+    134                  OTGD->DIEPMSK = USB_OTG_DIEPMSK_XFRCM;
+    135                  OTGD->DOEPMSK = USB_OTG_DOEPMSK_STUPM;
+    136                  /* unmask core interrupts */
+    137                  OTG->GINTMSK  = USB_OTG_GINTMSK_USBRST | USB_OTG_GINTMSK_ENUMDNEM |
+    138          #if !defined(USBD_SOF_DISABLED)
+    139                                  USB_OTG_GINTMSK_SOFM |
+    140          #endif
+    141                                  USB_OTG_GINTMSK_OEPINT | USB_OTG_GINTMSK_IISOIXFRM |
+    142                                  USB_OTG_GINTMSK_PXFRM_IISOOXFRM | USB_OTG_GINTMSK_EOPFM |
+    143                                  USB_OTG_GINTMSK_USBSUSPM | USB_OTG_GINTMSK_WUIM |
+    144                                  USB_OTG_GINTMSK_IEPINT | USB_OTG_GINTMSK_RXFLVLM;
+    145                  /* clear pending interrupts */
+    146                  OTG->GINTSTS = 0xFFFFFFFF;
+    147                  /* unmask global interrupt */
+    148                  _BST(OTG->GAHBCFG, USB_OTG_GAHBCFG_GINT);
+    149              } else {
+    150                  if (RCC->AHB2ENR & RCC_AHB2ENR_OTGFSEN) {
+    151                      _BST(RCC->AHB2RSTR, RCC_AHB2RSTR_OTGFSRST);
+    152                      _BCL(RCC->AHB2RSTR, RCC_AHB2RSTR_OTGFSRST);
+    153                      _BCL(RCC->AHB2ENR, RCC_AHB2ENR_OTGFSEN);
+    154                  }
+    155              }
+    156          }
+    157          
+    158          static uint8_t connect(bool connect) {
+    159              if (connect) {
+    160          /* The ST made a strange thing again. Really i dont'understand what is the reason to name
+    161             signal as PWRDWN (Power down PHY) when it works as "Power up" */
+    162                  _BST(OTG->GCCFG, USB_OTG_GCCFG_PWRDWN);
+    163                  _BCL(OTGD->DCTL, USB_OTG_DCTL_SDIS);
+    164              } else {
+    165                  _BST(OTGD->DCTL, USB_OTG_DCTL_SDIS);
+    166                  _BCL(OTG->GCCFG, USB_OTG_GCCFG_PWRDWN);
+    167              }
+    168              return usbd_lane_unk;
+    169          }
+    170          
+    171          static void setaddr (uint8_t addr) {
+    172              _BMD(OTGD->DCFG, USB_OTG_DCFG_DAD, addr << 4);
+    173          }
+    174          
+    175          /**\brief Helper. Set up TX fifo
+    176           * \param ep endpoint index
+    177           * \param epsize required max packet size in bytes
+    178           * \return true if TX fifo is successfully set
+    179           */
+    180          static bool set_tx_fifo(uint8_t ep, uint16_t epsize) {
+    181              uint32_t _fsa = OTG->DIEPTXF0_HNPTXFSIZ;
+    182              /* calculating initial TX FIFO address. next from EP0 TX fifo */
+    183              _fsa = 0xFFFF & (_fsa + (_fsa >> 16));
+    184              /* looking for next free TX fifo address */
+    185              for (int i = 0; i < (MAX_EP - 1); i++) {
+    186                  uint32_t _t = OTG->DIEPTXF[i];
+    187                  if ((_t & 0xFFFF) < 0x200) {
+    188                      _t = 0xFFFF & (_t + (_t >> 16));
+    189                      if (_t > _fsa) {
+    190                          _fsa = _t;
+    191                      }
+    192                  }
+    193              }
+    194              /* calculating requited TX fifo size */
+    195              /* getting in 32 bit terms */
+    196              epsize = (epsize + 0x03) >> 2;
+    197              /* it must be 16 32-bit words minimum */
+    198              if (epsize < 0x10) epsize = 0x10;
+    199              /* checking for the available fifo */
+    200              if ((_fsa + epsize) > MAX_FIFO_SZ) return false;
+    201              /* programming fifo register */
+    202              _fsa |= (epsize << 16);
+    203              OTG->DIEPTXF[ep - 1] = _fsa;
+    204              return true;
+    205          }
+    206          
+    207          static bool ep_config(uint8_t ep, uint8_t eptype, uint16_t epsize) {
+    208              if (ep == 0) {
+    209                  /* configuring control endpoint EP0 */
+    210                  uint32_t mpsize;
+    211                  if (epsize <= 0x08) {
+    212                      epsize = 0x08;
+    213                      mpsize = 0x03;
+    214                  } else if (epsize <= 0x10) {
+    215                      epsize = 0x10;
+    216                      mpsize = 0x02;
+    217                  } else if (epsize <= 0x20) {
+    218                      epsize = 0x20;
+    219                      mpsize = 0x01;
+    220                  } else {
+    221                      epsize = 0x40;
+    222                      mpsize = 0x00;
+    223                  }
+    224                  /* EP0 TX FIFO size is setted on init level */
+    225                  /* enabling RX and TX interrupts from EP0 */
+    226                  OTGD->DAINTMSK |= 0x00010001;
+    227                  /* setting up EP0 TX and RX registers */
+    228                  /*EPIN(ep)->DIEPTSIZ  = epsize;*/
+    229                  EPIN(ep)->DIEPCTL = mpsize | USB_OTG_DIEPCTL_SNAK;
+    230                  /* 1 setup packet, 1 packets total */
+    231                  EPOUT(ep)->DOEPTSIZ = epsize | (1 << 29) | (1 << 19);
+    232                  EPOUT(ep)->DOEPCTL = mpsize | USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_CNAK;
+    233                  return true;
+    234              }
+    235              if (ep & 0x80) {
+    236                  ep &= 0x7F;
+    237                  USB_OTG_INEndpointTypeDef* epi = EPIN(ep);
+    238                  /* configuring TX endpoint */
+    239                  /* setting up TX fifo and size register */
+    240                  if (eptype & USB_EPTYPE_DBLBUF) {
+    241                      if (!set_tx_fifo(ep, epsize << 1)) return false;
+    242                  } else {
+    243                      if (!set_tx_fifo(ep, epsize)) return false;
+    244                  }
+    245                  /* enabling EP TX interrupt */
+    246                  OTGD->DAINTMSK |= (0x0001UL << ep);
+    247                  /* setting up TX control register*/
+    248                  switch (eptype) {
+    249                  case USB_EPTYPE_ISOCHRONOUS:
+    250                  case USB_EPTYPE_ISOCHRONOUS | USB_EPTYPE_DBLBUF:
+    251                      epi->DIEPCTL = (0x01 << 18) | USB_OTG_DIEPCTL_USBAEP |
+    252                                     USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+    253                                     (ep << 22) | epsize;
+    254                      break;
+    255                  case USB_EPTYPE_BULK:
+    256                  case USB_EPTYPE_BULK | USB_EPTYPE_DBLBUF:
+    257                      epi->DIEPCTL = USB_OTG_DIEPCTL_SNAK | USB_OTG_DIEPCTL_USBAEP |
+    258                                      (0x02 << 18) | USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+    259                                      (ep << 22) | epsize;
+    260                      break;
+    261                  default:
+    262                      epi->DIEPCTL = USB_OTG_DIEPCTL_SNAK | USB_OTG_DIEPCTL_USBAEP |
+    263                                      (0x03 << 18) | USB_OTG_DIEPCTL_SD0PID_SEVNFRM |
+    264                                      (ep << 22) | epsize;
+    265                      break;
+    266                  }
+    267              } else {
+    268                  /* configuring RX endpoint */
+    269                  USB_OTG_OUTEndpointTypeDef* epo = EPOUT(ep);
+    270                  /* setting up RX control register */
+    271                  switch (eptype) {
+    272                  case USB_EPTYPE_ISOCHRONOUS:
+    273                  case USB_EPTYPE_ISOCHRONOUS | USB_EPTYPE_DBLBUF:
+    274                      epo->DOEPCTL = USB_OTG_DOEPCTL_CNAK |
+    275                                     USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_USBAEP |
+    276                                     (0x01 << 18) | epsize;
+    277                      break;
+    278                  case USB_EPTYPE_BULK | USB_EPTYPE_DBLBUF:
+    279                  case USB_EPTYPE_BULK:
+    280                      epo->DOEPCTL = USB_OTG_DOEPCTL_SD0PID_SEVNFRM | USB_OTG_DOEPCTL_CNAK |
+    281                                     USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_USBAEP |
+    282                                     (0x02 << 18) | epsize;
+    283                      break;
+    284                  default:
+    285                      epo->DOEPCTL = USB_OTG_DOEPCTL_SD0PID_SEVNFRM | USB_OTG_DOEPCTL_CNAK |
+    286                                     USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_USBAEP |
+    287                                     (0x03 << 18) | epsize;
+    288                      break;
+    289                  }
+    290              }
+    291              return true;
+    292          }
+    293          
+    294          static void ep_deconfig(uint8_t ep) {
+    295              ep &= 0x7F;
+    296              volatile USB_OTG_INEndpointTypeDef*  epi = EPIN(ep);
+    297              volatile USB_OTG_OUTEndpointTypeDef* epo = EPOUT(ep);
+    298              /* deconfiguring TX part */
+    299              /* disable interrupt */
+    300              OTGD->DAINTMSK &= ~(0x10001 << ep);
+    301              /* decativating endpoint */
+    302              _BCL(epi->DIEPCTL, USB_OTG_DIEPCTL_USBAEP);
+    303              /* flushing FIFO */
+    304              Flush_TX(ep);
+    305              /* disabling endpoint */
+    306              if ((epi->DIEPCTL & USB_OTG_DIEPCTL_EPENA) && (ep != 0)) {
+    307                  epi->DIEPCTL = USB_OTG_DIEPCTL_EPDIS;
+    308              }
+    309              /* clean EP interrupts */
+    310              epi->DIEPINT = 0xFF;
+    311              /* deconfiguring TX FIFO */
+    312              if (ep > 0) {
+    313                  OTG->DIEPTXF[ep-1] = 0x02000200 + 0x200 * ep;
+    314              }
+    315              /* deconfigureing RX part */
+    316              _BCL(epo->DOEPCTL, USB_OTG_DOEPCTL_USBAEP);
+    317              if ((epo->DOEPCTL & USB_OTG_DOEPCTL_EPENA) && (ep != 0)) {
+    318                  epo->DOEPCTL = USB_OTG_DOEPCTL_EPDIS;
+    319              }
+    320              epo->DOEPINT = 0xFF;
+    321          }
+    322          
+    323          static int32_t ep_read(uint8_t ep, void* buf, uint16_t blen) {
+    324              uint32_t len, tmp;
+    325              volatile uint32_t *fifo = EPFIFO(0);
+    326              /* no data in RX FIFO */
+    327              if (!(OTG->GINTSTS & USB_OTG_GINTSTS_RXFLVL)) return -1;
+    328              ep &= 0x7F;
+    329              if ((OTG->GRXSTSR & USB_OTG_GRXSTSP_EPNUM) != ep) return -1;
+    330              /* pop data from fifo */
+    331              len = _FLD2VAL(USB_OTG_GRXSTSP_BCNT, OTG->GRXSTSP);
+    332              for (int idx = 0; idx < len; idx++) {
+    333                  if ((idx & 0x03) == 0x00) {
+    334                      tmp = *fifo;
+    335                      }
+    336                  if (idx < blen) {
+    337                      ((uint8_t*)buf)[idx] = tmp & 0xFF;
+    338                      tmp >>= 8;
+    339                  }
+    340              }
+    341              return (len < blen) ? len : blen;
+    342          }
+    343          
+    344          static int32_t ep_write(uint8_t ep, void *buf, uint16_t blen) {
+    345              uint32_t len, tmp;
+    346              ep &= 0x7F;
+    347              volatile uint32_t* fifo = EPFIFO(ep);
+    348              USB_OTG_INEndpointTypeDef* epi = EPIN(ep);
+    349              /* transfer data size in 32-bit words */
+    350              len = (blen + 3) >> 2;
+    351              /* no enough space in TX fifo */
+    352              if (len > epi->DTXFSTS) return -1;
+    353              if (ep != 0 && epi->DIEPCTL & USB_OTG_DIEPCTL_EPENA) {
+    354                  return -1;
+    355              }
+    356              epi->DIEPTSIZ = 0;
+    357              epi->DIEPTSIZ = (1 << 19) + blen;
+    358              _BMD(epi->DIEPCTL, USB_OTG_DIEPCTL_STALL, USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_CNAK);
+    359              /* push data to FIFO */
+    360              tmp = 0;
+    361              for (int idx = 0; idx < blen; idx++) {
+    362                  tmp |= (uint32_t)((uint8_t*)buf)[idx] << ((idx & 0x03) << 3);
+    363                  if ((idx & 0x03) == 0x03 || (idx + 1) == blen) {
+    364                      *fifo = tmp;
+    365                      tmp = 0;
+    366                  }
+    367              }
+    368              return blen;
+    369          }
+    370          
+    371          static uint16_t get_frame (void) {
+    372              return _FLD2VAL(USB_OTG_DSTS_FNSOF, OTGD->DSTS);
+    373          }
+    374          
+    375          static void evt_poll(usbd_device *dev, usbd_evt_callback callback) {
+    376              uint32_t evt;
+    377              uint32_t ep = 0;
+    378              while (1) {
+    379                  uint32_t _t = OTG->GINTSTS;
+    380                  /* bus RESET event */
+    381                  if (_t & USB_OTG_GINTSTS_USBRST) {
+    382                      OTG->GINTSTS = USB_OTG_GINTSTS_USBRST;
+    383                      for (uint8_t i = 0; i < MAX_EP; i++ ) {
+    384                          ep_deconfig(i);
+    385                      }
+    386                      Flush_RX();
+    387                      continue;
+    388                  } else if (_t & USB_OTG_GINTSTS_ENUMDNE) {
+    389                      OTG->GINTSTS = USB_OTG_GINTSTS_ENUMDNE;
+    390                      evt = usbd_evt_reset;
+    391                  } else if (_t & USB_OTG_GINTSTS_IEPINT) {
+    392                      for (;; ep++) {
+    393                          USB_OTG_INEndpointTypeDef* epi = EPIN(ep);
+    394                          if (ep >= MAX_EP) return;
+    395                          if (epi->DIEPINT & USB_OTG_DIEPINT_XFRC) {
+    396                              _BST(epi->DIEPINT, USB_OTG_DIEPINT_XFRC);
+    397                              evt = usbd_evt_eptx;
+    398                              ep |= 0x80;
+    399                              break;
+    400                          }
+    401                      }
+    402                  } else if (_t & USB_OTG_GINTSTS_RXFLVL) {
+    403                      _t = OTG->GRXSTSR;
+    404                      ep = _t & USB_OTG_GRXSTSP_EPNUM;
+    405                      switch (_FLD2VAL(USB_OTG_GRXSTSP_PKTSTS, _t)) {
+    406                      case 0x02:  /* OUT recieved */
+    407                          evt = usbd_evt_eprx;
+    408                          break;
+    409                      case 0x06:  /* SETUP recieved */
+    410                          /* flushing TX if something stuck in control endpoint */
+    411                          if (EPIN(ep)->DIEPTSIZ & USB_OTG_DIEPTSIZ_PKTCNT) {
+    412                              Flush_TX(ep);
+    413                          }
+    414                          evt = usbd_evt_epsetup;
+    415                          break;
+    416                      case 0x03:  /* OUT completed */
+    417                      case 0x04:  /* SETUP completed */
+    418                          _BST(EPOUT(ep)->DOEPCTL, USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+    419                      default:
+    420                          /* pop GRXSTSP */
+    421                          OTG->GRXSTSP;
+    422                          continue;
+    423                      }
+    424          #if !defined(USBD_SOF_DISABLED)
+    425                  } else if (_t & USB_OTG_GINTSTS_SOF) {
+    426                      OTG->GINTSTS = USB_OTG_GINTSTS_SOF;
+    427                      evt = usbd_evt_sof;
+    428          #endif
+    429                  } else if (_t & USB_OTG_GINTSTS_USBSUSP) {
+    430                      evt = usbd_evt_susp;
+    431                      OTG->GINTSTS = USB_OTG_GINTSTS_USBSUSP;
+    432                  } else if (_t & USB_OTG_GINTSTS_WKUINT) {
+    433                      OTG->GINTSTS = USB_OTG_GINTSTS_WKUINT;
+    434                      evt = usbd_evt_wkup;
+    435                  } else if (_t & USB_OTG_GINTSTS_OEPINT) {
+    436                      for (;; ep++) {
+    437                          USB_OTG_OUTEndpointTypeDef* epi = EPOUT(ep);
+    438                          if (ep >= MAX_EP) break;
+    439                          if (epi->DOEPINT & USB_OTG_DOEPINT_XFRC) {
+    440                              epi->DOEPINT = USB_OTG_DOEPINT_XFRC;
+    441                              break;
+    442                          } else if (epi->DOEPINT & USB_OTG_DOEPINT_STUP) {
+    443                              epi->DOEPINT = USB_OTG_DOEPINT_STUP;
+    444                              break;
+    445                          } else if (epi->DOEPINT & USB_OTG_DOEPINT_OTEPDIS) {
+    446                              epi->DOEPINT = USB_OTG_DOEPINT_OTEPDIS;
+    447                              break;
+    448                          }
+    449                      }
+    450                      continue;
+    451                  } else if (_t & USB_OTG_GINTSTS_IISOIXFR) {
+    452                      for (;; ep++) {
+    453                          USB_OTG_INEndpointTypeDef* epi = EPIN(ep);
+    454                          if (ep >= MAX_EP) break;
+    455                          uint32_t diepctl = epi->DIEPCTL;
+    456                          if (((diepctl & USB_OTG_DIEPCTL_EPTYP) == USB_OTG_DIEPCTL_EPTYP_0) && 
+    457                              ((diepctl & USB_OTG_DIEPCTL_EPENA) != 0)) {
+    458                              epi->DIEPCTL |= USB_OTG_DIEPCTL_EPDIS;
+    459                              break;
+    460                          }
+    461                      }
+    462                      OTG->GINTSTS = USB_OTG_GINTSTS_IISOIXFR;
+    463                      return;
+    464                  } else if (_t & USB_OTG_GINTSTS_PXFR_INCOMPISOOUT) {
+    465                       OTG->GINTSTS = USB_OTG_GINTSTS_PXFR_INCOMPISOOUT;
+    466                       return;
+    467                  } else if (_t & USB_OTG_GINTSTS_EOPF) {
+    468                      for (;; ep++) {
+    469                          USB_OTG_INEndpointTypeDef* epi = EPIN(ep);
+    470                          USB_OTG_OUTEndpointTypeDef* epo = EPOUT(ep);
+    471                          if (ep >= MAX_EP) break;
+    472                          if ((epo->DOEPCTL & USB_OTG_DOEPCTL_EPTYP) == USB_OTG_DOEPCTL_EPTYP_0) {
+    473                              /* isochronous OUT endpoint */
+    474                              if (get_frame() & 1) {
+    475                                  _BST(epo->DOEPCTL, USB_OTG_DOEPCTL_SD0PID_SEVNFRM);
+    476                              } else {
+    477                                  _BST(epo->DOEPCTL, USB_OTG_DOEPCTL_SODDFRM);
+    478                              }
+    479                          } else if ((epi->DIEPCTL & USB_OTG_DIEPCTL_EPTYP) == USB_OTG_DIEPCTL_EPTYP_0) {
+    480                              /* isochronous IN endpoint */
+    481                              if (get_frame() & 1) {
+    482                                  _BST(epi->DIEPCTL, USB_OTG_DIEPCTL_SD0PID_SEVNFRM);
+    483                              } else {
+    484                                   _BST(epi->DIEPCTL, USB_OTG_DIEPCTL_SODDFRM);
+    485                              }
+    486                          }
+    487                      }
+    488                      OTG->GINTSTS = USB_OTG_GINTSTS_EOPF;
+    489                      return;
+    490                  } else {
+    491                      /* no more supported events */
+    492                      return;
+    493                  }
+    494                  callback(dev, evt, ep);
+    495                  return;
+    496              }
+    497          }
+    498          
+    499          static uint32_t fnv1a32_turn (uint32_t fnv, uint32_t data ) {
+    500              for (int i = 0; i < 4 ; i++) {
+    501                  fnv ^= (data & 0xFF);
+    502                  fnv *= 16777619;
+    503                  data >>= 8;
+    504              }
+    505              return fnv;
+    506          }
+    507          
+    508          static uint16_t get_serialno_desc(void *buffer) {
+    509              struct  usb_string_descriptor *dsc = buffer;
+    510              uint16_t *str = dsc->wString;
+    511              uint32_t fnv = 2166136261;
+    512              fnv = fnv1a32_turn(fnv, *(uint32_t*)(UID_BASE + 0x00));
+    513              fnv = fnv1a32_turn(fnv, *(uint32_t*)(UID_BASE + 0x04));
+    514              fnv = fnv1a32_turn(fnv, *(uint32_t*)(UID_BASE + 0x08));
+    515              for (int i = 28; i >= 0; i -= 4 ) {
+    516                  uint16_t c = (fnv >> i) & 0x0F;
+    517                  c += (c < 10) ? '0' : ('A' - 10);
+    518                  *str++ = c;
+    519              }
+    520              dsc->bDescriptorType = USB_DTYPE_STRING;
+    521              dsc->bLength = 18;
+    522              return 18;
+    523          }
+    524          
+    525          const struct usbd_driver usbd_otgfs = {
+    526              getinfo,
+    527              enable,
+    528              connect,
+    529              setaddr,
+    530              ep_config,
+    531              ep_deconfig,
+    532              ep_read,
+    533              ep_write,
+    534              ep_setstall,
+    535              ep_isstalled,
+    536              evt_poll,
+    537              get_frame,
+    538              get_serialno_desc,
+    539          };
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   EPFIFO
+       0   EPIN
+       0   EPOUT
+       0   Flush_RX
+       0   Flush_TX
+       0   connect
+       4   enable
+      24   ep_config
+        24   -> EPIN
+        24   -> EPOUT
+        24   -> set_tx_fifo
+      16   ep_deconfig
+        16   -> EPIN
+        16   -> EPOUT
+        16   -> Flush_TX
+       8   ep_isstalled
+         8   -> EPIN
+         8   -> EPOUT
+      24   ep_read
+        24   -> EPFIFO
+      16   ep_setstall
+        16   -> EPIN
+        16   -> EPOUT
+      24   ep_write
+        24   -> EPFIFO
+        24   -> EPIN
+      32   evt_poll
+        32   -- Indirect call
+        32   -> EPIN
+        32   -> EPOUT
+        32   -> Flush_RX
+        32   -> Flush_TX
+        32   -> ep_deconfig
+        32   -> get_frame
+       0   fnv1a32_turn
+       0   get_frame
+      32   get_serialno_desc
+        32   -> fnv1a32_turn
+       0   getinfo
+      12   set_tx_fifo
+       0   setaddr
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable16
+       4  ??DataTable16_1
+       4  ??DataTable16_10
+       4  ??DataTable16_11
+       4  ??DataTable16_12
+       4  ??DataTable16_13
+       4  ??DataTable16_14
+       4  ??DataTable16_15
+       4  ??DataTable16_16
+       4  ??DataTable16_17
+       4  ??DataTable16_18
+       4  ??DataTable16_19
+       4  ??DataTable16_2
+       4  ??DataTable16_3
+       4  ??DataTable16_4
+       4  ??DataTable16_5
+       4  ??DataTable16_6
+       4  ??DataTable16_7
+       4  ??DataTable16_8
+       4  ??DataTable16_9
+      12  EPFIFO
+      12  EPIN
+      12  EPOUT
+      26  Flush_RX
+      42  Flush_TX
+       4  OTG
+       4  OTGD
+       4  OTGPCTL
+      80  connect
+     204  enable
+     396  ep_config
+     160  ep_deconfig
+      48  ep_isstalled
+     118  ep_read
+     110  ep_setstall
+     174  ep_write
+     560  evt_poll
+      24  fnv1a32_turn
+      14  get_frame
+     100  get_serialno_desc
+      34  getinfo
+     120  set_tx_fifo
+      26  setaddr
+      52  usbd_otgfs
+
+ 
+    64 bytes in section .rodata
+ 2'352 bytes in section .text
+ 
+ 2'352 bytes of CODE  memory
+    64 bytes of CONST memory
+
+Errors: none
+Warnings: 1

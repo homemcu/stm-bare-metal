@@ -86,6 +86,7 @@
 #define GPIO_AF11_ETH           11
 #define GPIO_AF12_FMC           12
 #define GPIO_AF12_SDMMC1        12
+#define GPIO_AF12_USB_FS        12
 #define GPIO_AF13_DCMI          13
 
 #define GPIOCFG_MODE_SHIFT      4

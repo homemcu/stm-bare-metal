@@ -1,7 +1,7 @@
 /* This file is the part of the Lightweight USB device Stack for STM32 microcontrollers
  *
  * Copyright ©2016 Dmitry Filimonchuk <dmitrystu[at]gmail[dot]com>
- * Modifications Copyright (c) 2018, 2019 Vladimir Alemasov
+ * Modifications Copyright (c) 2018-2020 Vladimir Alemasov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@
 
 /**\name Communications Class Protocol Codes
  * @{ */
+#define USB_CDC_PROTO_NONE              0x00    /**<\brief No class specific protocol required */
 #define USB_CDC_PROTO_V25TER            0x01    /**<\brief AT Commands: V.250 etc.*/
  /** @} */
 

@@ -217,7 +217,7 @@ char getcharuart(void)
 
 //--------------------------------------------
 // USART Baud rate
-// USARTDIV = PCLK1(108MHz) * N / Baud
+// USARTDIV = PCLK1(54MHz) * N / Baud
 // N = 1 if OVER8 = 0 (Oversampling by 16)
 // N = 2 if OVER8 = 1 (Oversampling by 8)
 // if OVER8 = 0 (Oversampling by 16), Baud = 115200

@@ -1,0 +1,172 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V8.50.1.245/W32 for ARM         09/Jan/2021  10:06:22
+# Copyright 1999-2020 IAR Systems AB.
+#
+#    Cpu mode             
+#    Endian            =  little
+#    Source file       =
+#        C:\Programming\Microcontrollers\Devices\hal\src\stm32f411ce\hal-usbd-init.c
+#    Command line      =
+#        -f C:\Users\18EE~1\AppData\Local\Temp\EW77B5.tmp
+#        (C:\Programming\Microcontrollers\Devices\hal\src\stm32f411ce\hal-usbd-init.c
+#        -D STM32F411xE -D HSE_VALUE=25000000 -D USBD_OTGFS --preprocess=s
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -lcN
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj
+#        --no_cse --no_unroll --no_inline --no_code_motion --no_tbaa
+#        --no_clustering --no_scheduling --debug --endian=little
+#        --cpu=Cortex-M4 -e --fpu=VFPv4_sp --dlib_config "C:\Program Files
+#        (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\inc\c\DLib_Config_Normal.h" -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\src\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\hal\inc\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\drv\audio-out\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\class\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\uac-dac\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\cpu\stm32f411ce\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\platform\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\core\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\device\ST\STM32F4xx\Include\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\libusb_stm32\inc\
+#        -On)
+#    Locale            =  C
+#    List file         =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List\hal-usbd-init.lst
+#    Object file       =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\hal-usbd-init.o
+#    Runtime model:       
+#      __SystemLibrary =  DLib
+#      __dlib_version  =  6
+#
+###############################################################################
+
+C:\Programming\Microcontrollers\Devices\hal\src\stm32f411ce\hal-usbd-init.c
+      1          /*
+      2          * Copyright (c) 2020 Vladimir Alemasov
+      3          * All rights reserved
+      4          *
+      5          * This program and the accompanying materials are distributed under 
+      6          * the terms of GNU General Public License version 2 
+      7          * as published by the Free Software Foundation.
+      8          *
+      9          * This program is distributed in the hope that it will be useful,
+     10          * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     11          * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     12          * GNU General Public License for more details.
+     13          */
+     14          
+     15          #include "platform.h"
+     16          #include "stm32f4xx-hw.h"
+     17          #include "usbd_core.h"
+     18          #include "usb_std.h"
+     19          
+     20          //--------------------------------------------
+     21          #ifdef configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY
+     22          // = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY in FreeRTOSConfig.h
+     23          #define DEV_FS_IRQ_PREEMPT_PRIORITY     (configLIBRARY_LOWEST_INTERRUPT_PRIORITY - 1)
+     24          #else
+     25          #define DEV_FS_IRQ_PREEMPT_PRIORITY     14
+     26          #endif
+     27          
+     28          //--------------------------------------------
+     29          static usbd_device *udev;
+     30          
+     31          //--------------------------------------------
+     32          // USB_FS(CLK48)
+     33          // SOF:   PA8
+     34          // VBUS:  PA9
+     35          // ID:    PA10
+     36          // DM:    PA11
+     37          // DP:    PA12
+     38          
+     39          //--------------------------------------------
+     40          #define	PORT_SOF        GPIO_A
+     41          #define	PIN_SOF         8
+     42          #define	PORT_DM         GPIO_A
+     43          #define	PIN_DM          11
+     44          #define	PORT_DP         GPIO_A
+     45          #define	PIN_DP          12
+     46          
+     47          //--------------------------------------------
+     48          void usbd_hw_init(usbd_device *dev)
+     49          {
+     50          	// IO port A clock enable
+     51          	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
+     52          
+     53          #ifdef USBD_SOF_OUT
+     54          	hw_cfg_pin(GPIOx(PORT_SOF), PIN_SOF, GPIOCFG_MODE_ALT | GPIO_AF10_USB_FS | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_NONE);
+     55          #endif
+     56          	hw_cfg_pin(GPIOx(PORT_DM),  PIN_DM,  GPIOCFG_MODE_ALT | GPIO_AF10_USB_FS | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_NONE);
+     57          	hw_cfg_pin(GPIOx(PORT_DP),  PIN_DP,  GPIOCFG_MODE_ALT | GPIO_AF10_USB_FS | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_NONE);
+     58          
+     59          	NVIC_SetPriority(OTG_FS_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), DEV_FS_IRQ_PREEMPT_PRIORITY, 0));
+     60          	NVIC_EnableIRQ(OTG_FS_IRQn);
+     61          
+     62          	udev = dev;
+     63          }
+     64          
+     65          //--------------------------------------------
+     66          // DEV FS interruption handler
+     67          void OTG_FS_IRQHandler(void)
+     68          {
+     69          	usbd_poll(udev);
+     70          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      12   NVIC_EncodePriority
+       8   OTG_FS_IRQHandler
+         8   -> usbd_poll
+       0   __NVIC_EnableIRQ
+       0   __NVIC_GetPriorityGrouping
+       4   __NVIC_SetPriority
+      16   usbd_hw_init
+        16   -> NVIC_EncodePriority
+        16   -> __NVIC_EnableIRQ
+        16   -> __NVIC_GetPriorityGrouping
+        16   -> __NVIC_SetPriority
+        16   -> hw_cfg_pin
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable4
+       4  ??DataTable4_1
+       4  ??DataTable4_2
+       4  ??DataTable4_3
+       4  ??DataTable4_4
+       4  ??DataTable4_5
+       4  ??DataTable4_6
+      64  NVIC_EncodePriority
+      12  OTG_FS_IRQHandler
+      30  __NVIC_EnableIRQ
+      10  __NVIC_GetPriorityGrouping
+      44  __NVIC_SetPriority
+       4  udev
+      72  usbd_hw_init
+
+ 
+   4 bytes in section .bss
+ 260 bytes in section .text
+ 
+ 260 bytes of CODE memory
+   4 bytes of DATA memory
+
+Errors: none
+Warnings: none

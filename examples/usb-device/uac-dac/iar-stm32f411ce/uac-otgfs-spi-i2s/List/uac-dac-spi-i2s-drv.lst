@@ -1,0 +1,179 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V8.50.1.245/W32 for ARM         09/Jan/2021  10:06:22
+# Copyright 1999-2020 IAR Systems AB.
+#
+#    Cpu mode             
+#    Endian            =  little
+#    Source file       =
+#        C:\Programming\Microcontrollers\Devices\drv\audio-out\uac-dac-spi-i2s-drv.c
+#    Command line      =
+#        -f C:\Users\18EE~1\AppData\Local\Temp\EW79CD.tmp
+#        (C:\Programming\Microcontrollers\Devices\drv\audio-out\uac-dac-spi-i2s-drv.c
+#        -D STM32F411xE -D HSE_VALUE=25000000 -D USBD_OTGFS --preprocess=s
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -lcN
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj
+#        --no_cse --no_unroll --no_inline --no_code_motion --no_tbaa
+#        --no_clustering --no_scheduling --debug --endian=little
+#        --cpu=Cortex-M4 -e --fpu=VFPv4_sp --dlib_config "C:\Program Files
+#        (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\inc\c\DLib_Config_Normal.h" -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\src\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\hal\inc\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\drv\audio-out\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\class\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\uac-dac\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\cpu\stm32f411ce\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\platform\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\core\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\device\ST\STM32F4xx\Include\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\libusb_stm32\inc\
+#        -On)
+#    Locale            =  C
+#    List file         =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List\uac-dac-spi-i2s-drv.lst
+#    Object file       =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\uac-dac-spi-i2s-drv.o
+#    Runtime model:       
+#      __SystemLibrary =  DLib
+#      __dlib_version  =  6
+#
+###############################################################################
+
+C:\Programming\Microcontrollers\Devices\drv\audio-out\uac-dac-spi-i2s-drv.c
+      1          /*
+      2          * Copyright (c) 2019 Vladimir Alemasov
+      3          * All rights reserved
+      4          *
+      5          * This program and the accompanying materials are distributed under 
+      6          * the terms of GNU General Public License version 2 
+      7          * as published by the Free Software Foundation.
+      8          *
+      9          * This program is distributed in the hope that it will be useful,
+     10          * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     11          * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     12          * GNU General Public License for more details.
+     13          */
+     14          
+     15          #include "platform.h"
+     16          #include "hal-spi-i2s.h"
+     17          #include "hal-i2s-mclk.h"
+     18          #include "uac-dac-drv.h"
+     19          
+     20          static write_dma_txbuf_complete_callback tx_irq_tcif_callback;
+     21          static mclk_count_complete_callback mclk_callback;
+     22          
+     23          //--------------------------------------------
+     24          static void init_dma_txbuf(write_dma_txbuf_complete_callback callback)
+     25          {
+     26          	tx_irq_tcif_callback = callback;
+     27          	hal_spi_i2s_init_dma_tx_buf();
+     28          }
+     29          
+     30          //--------------------------------------------
+     31          static void init(void)
+     32          {
+     33          	hal_spi_i2s_init();
+     34          	hal_spi_i2s_config(1);
+     35          	hal_i2s_mclk_init();
+     36          }
+     37          
+     38          //--------------------------------------------
+     39          void hal_spi_i2s_tx_irq_tcif_callback(void)
+     40          {
+     41          	tx_irq_tcif_callback();
+     42          }
+     43          
+     44          //--------------------------------------------
+     45          static void mclk_start_count(mclk_count_complete_callback callback)
+     46          {
+     47          	mclk_callback = callback;
+     48          	hal_i2s_mclk_start_count();
+     49          }
+     50          
+     51          //--------------------------------------------
+     52          void mclk_irq_callback(uint32_t mclk)
+     53          {
+     54          	mclk_callback(mclk);
+     55          }
+     56          
+     57          //--------------------------------------------
+     58          // Byte sequence in USB wire (32-bit, LSB first):            B1 B2 B3 B4
+     59          // Byte sequence after this function before DMA transfer:    B3 B4 B1 B2
+     60          // Byte sequence in I2S wire (32-bit, MSB first):            B4 B3 B2 B1
+     61          static void convert32to32(uint32_t *in, uint32_t *out)
+     62          {
+     63          	*out = *in << 16 | *in >> 16;
+     64          }
+     65          
+     66          //--------------------------------------------
+     67          const audio_out_drv_t audio_out_drv =
+     68          {
+     69          	init,
+     70          	init_dma_txbuf,
+     71          	hal_spi_i2s_write_dma_buf,
+     72          	hal_spi_i2s_get_mclk,
+     73          	hal_i2s_mclk_set_sof,
+     74          	mclk_start_count,
+     75          	hal_i2s_mclk_stop_count,
+     76          	convert32to32,
+     77          };
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   convert32to32
+       8   hal_spi_i2s_tx_irq_tcif_callback
+         8   -- Indirect call
+       8   init
+         8   -> hal_i2s_mclk_init
+         8   -> hal_spi_i2s_config
+         8   -> hal_spi_i2s_init
+       8   init_dma_txbuf
+         8   -> hal_spi_i2s_init_dma_tx_buf
+       8   mclk_irq_callback
+         8   -- Indirect call
+       8   mclk_start_count
+         8   -> hal_i2s_mclk_start_count
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable3
+       4  ??DataTable3_1
+      32  audio_out_drv
+      12  convert32to32
+      10  hal_spi_i2s_tx_irq_tcif_callback
+      18  init
+      14  init_dma_txbuf
+       4  mclk_callback
+      14  mclk_irq_callback
+      14  mclk_start_count
+       4  tx_irq_tcif_callback
+
+ 
+  8 bytes in section .bss
+ 32 bytes in section .rodata
+ 90 bytes in section .text
+ 
+ 90 bytes of CODE  memory
+ 32 bytes of CONST memory
+  8 bytes of DATA  memory
+
+Errors: none
+Warnings: none

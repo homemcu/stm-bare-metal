@@ -1,0 +1,945 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V8.50.1.245/W32 for ARM         09/Jan/2021  10:06:45
+# Copyright 1999-2020 IAR Systems AB.
+#
+#    Cpu mode             
+#    Endian            =  little
+#    Source file       =
+#        C:\Programming\Microcontrollers\Devices\lib\usbd\uac-dac\usb-uac-i2s.c
+#    Command line      =
+#        -f C:\Users\18EE~1\AppData\Local\Temp\EWD138.tmp
+#        (C:\Programming\Microcontrollers\Devices\lib\usbd\uac-dac\usb-uac-i2s.c
+#        -D STM32F411xE -D HSE_VALUE=25000000 -D USBD_OTGFS --preprocess=s
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -lcN
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj
+#        --no_cse --no_unroll --no_inline --no_code_motion --no_tbaa
+#        --no_clustering --no_scheduling --debug --endian=little
+#        --cpu=Cortex-M4 -e --fpu=VFPv4_sp --dlib_config "C:\Program Files
+#        (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\inc\c\DLib_Config_Normal.h" -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\src\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\hal\inc\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\drv\audio-out\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\class\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\uac-dac\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\cpu\stm32f411ce\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\platform\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\core\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\device\ST\STM32F4xx\Include\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\libusb_stm32\inc\
+#        -On)
+#    Locale            =  C
+#    List file         =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List\usb-uac-i2s.lst
+#    Object file       =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\usb-uac-i2s.o
+#    Runtime model:       
+#      __SystemLibrary =  DLib
+#      __dlib_version  =  6
+#
+###############################################################################
+
+C:\Programming\Microcontrollers\Devices\lib\usbd\uac-dac\usb-uac-i2s.c
+      1          /*
+      2          * Copyright (c) 2018, 2019 Vladimir Alemasov
+      3          * All rights reserved
+      4          *
+      5          * This program and the accompanying materials are distributed under 
+      6          * the terms of GNU General Public License version 2 
+      7          * as published by the Free Software Foundation.
+      8          *
+      9          * This program is distributed in the hope that it will be useful,
+     10          * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     11          * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     12          * GNU General Public License for more details.
+     13          */
+     14          
+     15          // USB UAC class
+     16          // This module is based on
+     17          // Universal Serial Bus Specification Revision 2.0 April 27, 2000
+     18          // Universal Serial Bus Device Class Definition for Audio Devices Release 1.0 March 18, 1998
+     19          // USB-2 refers to the Universal Serial Bus Specification, Revision 2.0
+     20          // ADC-1 refers to the USB Device Class Definition for Audio Devices, Release 1.0
+     21          
+     22          #include "platform.h"
+     23          #include "usbd_core.h"
+     24          #include "usb_std.h"
+     25          #include "hal-usbd-init.h"
+     26          #include "usb-uac.h"
+     27          #include "uac-dac-drv.h"
+     28          
+     29          #ifndef USBD_FULL_SPEED
+     30          #error "UAC 1.0 does not support high speed."
+     31          #endif
+     32          
+     33          //--------------------------------------------
+     34          extern const audio_out_drv_t audio_out_drv;
+     35          
+     36          #ifdef USBD_OTGFS
+     37          extern const struct usbd_driver usbd_otgfs;
+     38          #define usbd_hw usbd_otgfs
+     39          #elif defined USBD_OTGHS_FS
+     40          extern const struct usbd_driver usbd_otghs;
+     41          #define usbd_hw usbd_otghs
+     42          #endif
+     43          
+     44          //--------------------------------------------
+     45          // An AUDIO FRAME means a block of data the host transmits to device (or vice versa)
+     46          // inside the usb isochronous packets.
+     47          // An AUDIO SAMPLE is the smallest usable quantum of digital audio.
+     48          // An USB FRAME is count by the SOF packets, for FS = 1000/s (each 1ms)
+     49          //--------------------------------------------
+     50          #define AUDIO_SAMPLE_RATE               I2S_FCLK
+     51          #define BITS_PER_AUDIO_SAMPLE           UAC_BITRES
+     52          #if BITS_PER_AUDIO_SAMPLE == 16
+     53          #define BYTES_PER_AUDIO_SAMPLE          2
+     54          #else
+     55          #define BYTES_PER_AUDIO_SAMPLE          4
+     56          #endif
+     57          #define AUDIO_CHANNELS                  I2S_CHANNELS
+     58          #define USB_FRAMES_PER_AUDIO_FRAME      1 // bInterval = 1 ms
+     59          #define USB_FRAMES_PER_FEEDBACK_FRAME   1 // bInterval = 1 ms
+     60          #define SAMPLES_PER_AUDIO_FRAME         (AUDIO_SAMPLE_RATE / 1000) * USB_FRAMES_PER_AUDIO_FRAME
+     61          #define BYTES_PER_AUDIO_FRAME           (SAMPLES_PER_AUDIO_FRAME * AUDIO_CHANNELS * BYTES_PER_AUDIO_SAMPLE)
+     62          #define MAX_BYTES_PER_AUDIO_FRAME       (BYTES_PER_AUDIO_FRAME + BYTES_PER_AUDIO_SAMPLE * AUDIO_CHANNELS * USB_FRAMES_PER_AUDIO_FRAME)
+     63          #define MAX_SAMPLES_PER_AUDIO_FRAME     (MAX_BYTES_PER_AUDIO_FRAME / BYTES_PER_AUDIO_SAMPLE)
+     64          #define AUDIO_FRAMES_IN_BUFFER          16
+     65          // fMCLK measurement interval in ms as power of 2
+     66          #define AUDIO_FMCLK_MEASUREINT_MS_POWER_OF_TWO         5  // 2^5 = 32 ms
+     67          // fMCLK measurement interval in USB frames as power of 2
+     68          #define AUDIO_FMCLK_MEASUREINT_FR_POWER_OF_TWO         AUDIO_FMCLK_MEASUREINT_MS_POWER_OF_TWO  // 2^5 = 32 frames size of 1 ms
+     69          
+     70          //--------------------------------------------
+     71          #define UAC_EP0_SIZE                64
+     72          #define UAC_RXD_EP                  0x01
+     73          #define UAC_TXD_EP                  0x82
+     74          #define UAC_DATA_SZ                 MAX_BYTES_PER_AUDIO_FRAME
+     75          #define UAC_FEEDBACK_SZ             4
+     76          
+     77          // Interfaces
+     78          #define UAC_CONTROL_INTERFACE       0
+     79          #define UAC_STREAMING_INTERFACE     1
+     80          
+     81          // Entity IDs
+     82          #define UAC_INPUT_UNIT_ID           1
+     83          #define UAC_FEATURE_UNIT_ID         2
+     84          #define UAC_OUTPUT_UNIT_ID          3
+     85          
+     86          //--------------------------------------------
+     87          #pragma pack(push, 1)
+     88          typedef struct uac_config
+     89          {
+     90          	struct usb_config_descriptor                        config;
+     91          	struct usb_iad_descriptor                           iad;
+     92          	struct usb_interface_descriptor                     ac;
+     93          	struct usb_uac_ac_header_sz1_desc                   ac_hdr;
+     94          	struct usb_uac_input_terminal_desc                  ac_itd;
+     95          #if AUDIO_CHANNELS == 1
+     96          	struct usb_uac_feature_unit_sz2x16_desc             ac_fu;
+     97          #else
+     98          	struct usb_uac_feature_unit_sz3x16_desc             ac_fu;
+     99          #endif
+    100          	struct usb_uac_output_terminal_desc                 ac_otd;
+    101          	struct usb_interface_descriptor                     as_0;
+    102          	struct usb_interface_descriptor                     as_1;
+    103          	struct usb_uac_as_desc                              as_hdr;
+    104          	struct usb_uac_as_format_type1_sz3_desc             as_format_type1;
+    105          	struct usb_uac_std_iso_endpoint_descriptor          eprx_data_std;
+    106          	struct usb_uac_cs_iso_endpoint_descriptor           eprx_data_cs;
+    107          	struct usb_uac_std_iso_endpoint_descriptor          eptx_fback_std;
+    108          } uac_config_t;
+    109          #pragma pack(pop)
+    110          
+    111          //--------------------------------------------
+    112          static const struct usb_device_descriptor device_desc =
+    113          {
+    114          	.bLength            = sizeof(struct usb_device_descriptor),
+    115          	.bDescriptorType    = USB_DTYPE_DEVICE,
+    116          	.bcdUSB             = CPU_TO_LE16(VERSION_BCD(2,0,0)),
+    117          	.bDeviceClass       = USB_CLASS_MISC,
+    118          	.bDeviceSubClass    = USB_SUBCLASS_COMMON,
+    119          	.bDeviceProtocol    = USB_PROTO_IAD,
+    120          	.bMaxPacketSize0    = UAC_EP0_SIZE,
+    121          	.idVendor           = CPU_TO_LE16(0x0483),
+    122          	.idProduct          = CPU_TO_LE16(0x5740),
+    123          	.bcdDevice          = CPU_TO_LE16(VERSION_BCD(1,0,0)),
+    124          	.iManufacturer      = 1,
+    125          	.iProduct           = 2,
+    126          	.iSerialNumber      = INTSERIALNO_DESCRIPTOR,
+    127          	.bNumConfigurations = 1,
+    128          };
+    129          
+    130          //--------------------------------------------
+    131          static const uac_config_t config_desc =
+    132          {
+    133          	.config =
+    134          	{
+    135          		.bLength                   = sizeof(struct usb_config_descriptor),
+    136          		.bDescriptorType           = USB_DTYPE_CONFIGURATION,
+    137          		.wTotalLength              = CPU_TO_LE16(sizeof(uac_config_t)),
+    138          		.bNumInterfaces            = 2,
+    139          		.bConfigurationValue       = 1,
+    140          		.iConfiguration            = NO_DESCRIPTOR,
+    141          		.bmAttributes              = USB_CFG_ATTR_RESERVED | USB_CFG_ATTR_SELFPOWERED,
+    142          		.bMaxPower                 = USB_CFG_POWER_MA(100),
+    143          	},
+    144          	.iad =
+    145          	{
+    146          		.bLength                   = sizeof(struct usb_iad_descriptor),
+    147          		.bDescriptorType           = USB_DTYPE_INTERFACEASSOC,
+    148          		.bFirstInterface           = 0,
+    149          		.bInterfaceCount           = 2,
+    150          		.bFunctionClass            = USB_CLASS_AUDIO,
+    151          		.bFunctionSubClass         = USB_SUBCLASS_NONE,
+    152          		.bFunctionProtocol         = USB_PROTO_NONE,
+    153          		.iFunction                 = 2,
+    154          	},
+    155          	.ac =
+    156          	{
+    157          		.bLength                   = sizeof(struct usb_interface_descriptor),
+    158          		.bDescriptorType           = USB_DTYPE_INTERFACE,
+    159          		.bInterfaceNumber          = UAC_CONTROL_INTERFACE,
+    160          		.bAlternateSetting         = 0,
+    161          		.bNumEndpoints             = 0,
+    162          		.bInterfaceClass           = USB_CLASS_AUDIO,
+    163          		.bInterfaceSubClass        = USB_SUBCLASS_AUDIOCONTROL,
+    164          		.bInterfaceProtocol        = USB_PROTO_NONE,
+    165          		.iInterface                = NO_DESCRIPTOR,
+    166          	},
+    167          	.ac_hdr =
+    168          	{
+    169          		.bLength                   = sizeof(struct usb_uac_ac_header_sz1_desc),
+    170          		.bDescriptorType           = USB_DTYPE_CS_INTERFACE,
+    171          		.bDescriptorSubType        = USB_DTYPE_UAC_AC_HEADER,
+    172          		.bcdADC                    = CPU_TO_LE16(VERSION_BCD(1,0,0)),
+    173          		.wTotalLength              = CPU_TO_LE16(sizeof(struct usb_uac_ac_header_sz1_desc) +
+    174          	                                             sizeof(struct usb_uac_input_terminal_desc) +
+    175          #if AUDIO_CHANNELS == 1
+    176          	                                             sizeof(struct usb_uac_feature_unit_sz2x16_desc) +
+    177          #else
+    178          	                                             sizeof(struct usb_uac_feature_unit_sz3x16_desc) +
+    179          #endif
+    180          	                                             sizeof(struct usb_uac_output_terminal_desc)),
+    181          		.bInCollection             = 1,
+    182          		.baInterfaceNr             = UAC_STREAMING_INTERFACE,
+    183          	},
+    184          	.ac_itd =
+    185          	{
+    186          		.bLength                   = sizeof(struct usb_uac_input_terminal_desc),
+    187          		.bDescriptorType           = USB_DTYPE_CS_INTERFACE,
+    188          		.bDescriptorSubType        = USB_DTYPE_UAC_AC_INPUT_TERMINAL,
+    189          		.bTerminalID               = UAC_INPUT_UNIT_ID,
+    190          		.wTerminalType             = CPU_TO_LE16(USB_UAC_TT_USB_STREAMING),
+    191          		.bAssocTerminal            = 0,
+    192          		.bNrChannels               = AUDIO_CHANNELS,
+    193          #if AUDIO_CHANNELS == 1
+    194          		.wChannelConfig            = CPU_TO_LE16(0x0004), // C
+    195          #else
+    196          		.wChannelConfig            = CPU_TO_LE16(0x0003), // L, R
+    197          #endif
+    198          		.iChannelNames             = 0,
+    199          		.iTerminal                 = 0,
+    200          	},
+    201          	.ac_fu =
+    202          	{
+    203          #if AUDIO_CHANNELS == 1
+    204          		.bLength                   = sizeof(struct usb_uac_feature_unit_sz2x16_desc),
+    205          #else
+    206          		.bLength                   = sizeof(struct usb_uac_feature_unit_sz3x16_desc),
+    207          #endif
+    208          		.bDescriptorType           = USB_DTYPE_CS_INTERFACE,
+    209          		.bDescriptorSubType        = USB_DTYPE_UAC_AC_FEATURE_UNIT,
+    210          		.bUnitID                   = UAC_FEATURE_UNIT_ID,
+    211          		.bSourceID                 = UAC_INPUT_UNIT_ID,
+    212          		.bControlSize              = 2,
+    213          		.bmaControls[0]            = CPU_TO_LE16(0x0000), // Master controls
+    214          		.bmaControls[1]            = CPU_TO_LE16(USB_UAC_FU_BMAC_MUTE_CONTROL), // Channel 0 controls: Mute
+    215          #if AUDIO_CHANNELS == 2
+    216          		.bmaControls[2]            = CPU_TO_LE16(USB_UAC_FU_BMAC_MUTE_CONTROL), // Channel 1 controls: Mute
+    217          #endif
+    218          		.iFeature                  = 0,
+    219          	},
+    220          	.ac_otd =
+    221          	{
+    222          		.bLength                   = sizeof(struct usb_uac_output_terminal_desc),
+    223          		.bDescriptorType           = USB_DTYPE_CS_INTERFACE,
+    224          		.bDescriptorSubType        = USB_DTYPE_UAC_AC_OUTPUT_TERMINAL,
+    225          		.bTerminalID               = UAC_OUTPUT_UNIT_ID,
+    226          		.wTerminalType             = CPU_TO_LE16(USB_UAC_OTT_HEADPHONES),
+    227          		.bAssocTerminal            = 0,
+    228          		.bSourceID                 = UAC_FEATURE_UNIT_ID,
+    229          		.iTerminal                 = 0,
+    230          	},
+    231          	.as_0 =
+    232          	{
+    233          		.bLength                   = sizeof(struct usb_interface_descriptor),
+    234          		.bDescriptorType           = USB_DTYPE_INTERFACE,
+    235          		.bInterfaceNumber          = UAC_STREAMING_INTERFACE,
+    236          		.bAlternateSetting         = 0,
+    237          		.bNumEndpoints             = 0,
+    238          		.bInterfaceClass           = USB_CLASS_AUDIO,
+    239          		.bInterfaceSubClass        = USB_SUBCLASS_AUDIOSTREAMING,
+    240          		.bInterfaceProtocol        = USB_PROTO_NONE,
+    241          		.iInterface                = NO_DESCRIPTOR,
+    242          	},
+    243          	.as_1 =
+    244          	{
+    245          		.bLength                   = sizeof(struct usb_interface_descriptor),
+    246          		.bDescriptorType           = USB_DTYPE_INTERFACE,
+    247          		.bInterfaceNumber          = UAC_STREAMING_INTERFACE,
+    248          		.bAlternateSetting         = 1,
+    249          		.bNumEndpoints             = 2,
+    250          		.bInterfaceClass           = USB_CLASS_AUDIO,
+    251          		.bInterfaceSubClass        = USB_SUBCLASS_AUDIOSTREAMING,
+    252          		.bInterfaceProtocol        = USB_PROTO_NONE,
+    253          		.iInterface                = NO_DESCRIPTOR,
+    254          	},
+    255          	.as_hdr =
+    256          	{
+    257          		.bLength                   = sizeof(struct usb_uac_as_desc),
+    258          		.bDescriptorType           = USB_DTYPE_CS_INTERFACE,
+    259          		.bDescriptorSubType        = USB_DTYPE_UAC_AS_GENERAL,
+    260          		.bTerminalLink             = UAC_INPUT_UNIT_ID,
+    261          		.bDelay                    = 0,
+    262          		.wFormatTag                = CPU_TO_LE16(USB_UAC_DATA_FORMAT_PCM),
+    263          	},
+    264          	.as_format_type1 =
+    265          	{
+    266          		.bLength                   = sizeof(struct usb_uac_as_format_type1_sz3_desc),
+    267          		.bDescriptorType           = USB_DTYPE_CS_INTERFACE,
+    268          		.bDescriptorSubType        = USB_DTYPE_UAC_AS_FORMAT_TYPE,
+    269          		.bFormatType               = USB_UAC_DATA_FORMAT_TYPE_I,
+    270          		.bNrChannels               = AUDIO_CHANNELS,
+    271          		.bSubframeSize             = BYTES_PER_AUDIO_SAMPLE,
+    272          		.bBitResolution            = BITS_PER_AUDIO_SAMPLE,
+    273          		.bSamFreqType              = 0x01,
+    274          		.tSamFreq[0]               = (uint8_t)(AUDIO_SAMPLE_RATE),
+    275          		.tSamFreq[1]               = (uint8_t)(AUDIO_SAMPLE_RATE >> 8),
+    276          		.tSamFreq[2]               = (uint8_t)(AUDIO_SAMPLE_RATE >> 16),
+    277          	},
+    278          	.eprx_data_std =
+    279          	{
+    280          		.bLength                   = sizeof(struct usb_uac_std_iso_endpoint_descriptor),
+    281          		.bDescriptorType           = USB_DTYPE_ENDPOINT,
+    282          		.bEndpointAddress          = UAC_RXD_EP,
+    283          		.bmAttributes              = USB_EPTYPE_ISOCHRONOUS | USB_EPATTR_ASYNC,
+    284          		.wMaxPacketSize            = CPU_TO_LE16(UAC_DATA_SZ),
+    285          		.bInterval                 = 1,
+    286          		.bRefresh                  = 0,
+    287          		.bSynchAddress             = UAC_TXD_EP,
+    288          	},
+    289          	.eprx_data_cs =
+    290          	{
+    291          		.bLength                   = sizeof(struct usb_uac_cs_iso_endpoint_descriptor),
+    292          		.bDescriptorType           = USB_DTYPE_CS_ENDPOINT,
+    293          		.bDescriptorSubType        = USB_DTYPE_UAC_EP_GENERAL,
+    294          		.bmAttributes              = 0x00,
+    295          		.bLockDelayUnits           = 0,
+    296          		.wLockDelay                = CPU_TO_LE16(0x0000),
+    297          	},
+    298          	.eptx_fback_std =
+    299          	{
+    300          		.bLength                   = sizeof(struct usb_uac_std_iso_endpoint_descriptor),
+    301          		.bDescriptorType           = USB_DTYPE_ENDPOINT,
+    302          		.bEndpointAddress          = UAC_TXD_EP,
+    303          		.bmAttributes              = USB_EPTYPE_ISOCHRONOUS | USB_EPUSAGE_FEEDBACK,
+    304          		.wMaxPacketSize            = CPU_TO_LE16(UAC_FEEDBACK_SZ),
+    305          		.bInterval                 = 1,
+    306          		.bRefresh                  = AUDIO_FMCLK_MEASUREINT_FR_POWER_OF_TWO,
+    307          		.bSynchAddress             = 0,
+    308          	},
+    309          };
+    310          
+    311          //--------------------------------------------
+    312          static const struct usb_string_descriptor lang_desc = USB_ARRAY_DESC(USB_LANGID_ENG_US);
+    313          static const struct usb_string_descriptor manuf_desc_en = USB_STRING_DESC("Homemcu firmware examples");
+    314          static const struct usb_string_descriptor prod_desc_en = USB_STRING_DESC("UAC I2S-DAC demo");
+    315          static const struct usb_string_descriptor *const dtable[] =
+    316          {
+    317          	&lang_desc,
+    318          	&manuf_desc_en,
+    319          	&prod_desc_en,
+    320          };
+    321          
+    322          //--------------------------------------------
+    323          typedef struct audio_state
+    324          {
+    325          	uint8_t mute[AUDIO_CHANNELS + 1];
+    326          	bool playback;
+    327          	bool feedback;
+    328          	bool start_usb;
+    329          	bool start_i2s;
+    330          	uint8_t cnt_i2s;
+    331          	uint8_t cnt_usb;
+    332          	uint32_t total_cnt_i2s;
+    333          	uint32_t total_cnt_usb;
+    334          } audio_state_t;
+    335          
+    336          typedef struct feedback_state
+    337          {
+    338          	uint32_t mclk_count_measured;
+    339          	uint32_t mclk_count_expected;
+    340          	uint32_t mclk_count_correction;
+    341          	uint8_t feedback_data[UAC_FEEDBACK_SZ];
+    342          	uint32_t flagO;
+    343          	uint32_t flagE;
+    344          	uint32_t flagU;
+    345          	uint32_t flagU1;
+    346          	uint32_t flagU2;
+    347          	uint32_t flagU3;
+    348          	uint32_t flagU4;
+    349          } feedback_state_t;
+    350          
+    351          //--------------------------------------------
+    352          static usbd_device udev;
+    353          static uint8_t iface_num;
+    354          static uint8_t altset_num;
+    355          static audio_state_t audio;
+    356          static feedback_state_t feedback;
+    357          // Due to use with USB FIFO and/or DMA, the data buffers below must be 32-bit aligned:
+    358          #define USB_CTRL_BUFF_SZ 128
+    359          static uint32_t ubuf[(USB_CTRL_BUFF_SZ + 3) / sizeof(uint32_t)];
+    360          static uint32_t buff_usb[AUDIO_FRAMES_IN_BUFFER][(UAC_DATA_SZ + 3) / sizeof(uint32_t)];
+    361          static uint16_t buff_usb_size[AUDIO_FRAMES_IN_BUFFER];
+    362          // UAC_CTRL_BUFF_SZ must not be less than the UAC control parameter block of the maximum length
+    363          #define UAC_CTRL_BUFF_SZ 16
+    364          static uint32_t buff_uac_ctrl[(UAC_CTRL_BUFF_SZ + 3) / sizeof(uint32_t)];
+    365          
+    366          //--------------------------------------------
+    367          // FRAMERATE FEEDBACK:
+    368          // Application measures number of master clocks between "2^AUDIO_FMCLK_MEASUREINT_FR_POWER_OF_TWO" SOFs
+    369          // and calculates feedback data (framerate relative to SOF frequency, in 10.14 format).
+    370          // Feedback data is pushed to host every "2^AUDIO_FMCLK_MEASUREINT_MS_POWER_OF_TWO" ms using dedicated isochronous IN endpoint.
+    371          //--------------------------------------------
+    372          // Feedback (USB-2 5.12.4.2)
+    373          // Feedback value (Fv) is expressed in number of samples per (micro)frame.
+    374          // The Feedback value (Fv) consists of:
+    375          // 1. An integer part that represents the (integer) number of samples per (micro)frame.
+    376          // The integer part must have enough bits to represent the maximum number of samples that
+    377          // can ever occur in a single (micro)frame. Assuming that the minimum sample size is one byte, then this
+    378          // number is limited to 1,023 for full-speed endpoints. Ten bits are therefore sufficient to encode this value.
+    379          // For high-speed endpoints, this number is limited to 3*1,024=3,072 and twelve bits are needed.
+    380          // 2. A fractional part that represents the “fraction” of a sample that would be needed to match
+    381          // the sampling frequency Feedback value to a resolution of 1 Hz or better.
+    382          // The fractional part requires at least K bits, where K=10 for full-speed devices (1 ms frames) and
+    383          // K=13 for high-speed devices (125 µs microframes).
+    384          // So Feedback value (Fv) must be at least:
+    385          // 10.10 (10.14 in 3-bytes) format for full-speed devices
+    386          // 12.13 (16.16 in 4-bytes) format for high-speed devices
+    387          //
+    388          // For example, we have the feedback number 0x0B0660, for the 10.14 format it is "0x2C.0x660".
+    389          // The part to the left of the point is the whole part 0x2C = 44. The part to the right of the point is the numerator 
+    390          // of the fraction "0x660 / 2 ^ 14" = 1632 / 16384 = 0.0996. So the whole feedback is 44.0996 samples per frame.
+    391          //
+    392          // Feedback value:
+    393          // Fv = nFCLK / nSOF, where nFCLK - number of the sound frame periods, nSOF - number of SOF signals
+    394          // For 44100Hz frame frequency and full-speed endpoints, the ideal feedback value measured in 1s (nSOF = 1000) is:
+    395          // Fv = nFCLK / nSOF = 44100 / 1000 = 44.100
+    396          // If we have fSCLK = fFCLK * 32 or/and fMCLK = fFCLK * 256, feedback value can be calculated as:
+    397          // Fv = nFCLK / nSOF = nSCLK / (nSOF * 32) = nMCLK / (nSOF * 256)
+    398          // For 44100Hz frame frequency and full-speed endpoints, the ideal feedback value measured in 32ms (nSOF = 32) is:
+    399          // Fv = nSCLK / (nSOF * 32) = 45158 / (32 * 32) = 44.0996
+    400          // Fv = nMCLK / (nSOF * 256) = 361267 / (32 * 256) = 44.0999
+    401          // For 44100Hz frame frequency and full-speed endpoints, the ideal feedback value measured in 4ms (nSOF = 4) is:
+    402          // Fv = nMCLK / (nSOF * 256) = 45158 / (4 * 256) = 44.0996
+    403          //
+    404          #if (AUDIO_FMCLK_MEASUREINT_FR_POWER_OF_TWO + 8) <= 14
+    405          #define AUDIO_MCLK_FEEDBACK_1014(a) (a << (14 - (AUDIO_FMCLK_MEASUREINT_FR_POWER_OF_TWO + 8)))
+    406          #else
+    407          #define AUDIO_MCLK_FEEDBACK_1014(a) (a >> ((AUDIO_FMCLK_MEASUREINT_FR_POWER_OF_TWO + 8) - 14))
+    408          #endif
+    409          
+    410          //--------------------------------------------
+    411          static void mclk_callback(uint32_t mclk)
+    412          {
+    413          	uint32_t feedback_1014;
+    414          
+    415          	feedback.mclk_count_measured = mclk;
+    416          	if (audio.total_cnt_usb > audio.total_cnt_i2s)
+    417          	{
+    418          		++feedback.flagU;
+    419          		if (audio.total_cnt_usb - audio.total_cnt_i2s >= AUDIO_FRAMES_IN_BUFFER - AUDIO_FRAMES_IN_BUFFER / 8)
+    420          		{
+    421          			feedback.mclk_count_measured -= feedback.mclk_count_correction * 2;
+    422          			++feedback.flagU4;
+    423          		}
+    424          		if (audio.total_cnt_usb - audio.total_cnt_i2s >= AUDIO_FRAMES_IN_BUFFER - AUDIO_FRAMES_IN_BUFFER / 4)
+    425          		{
+    426          			feedback.mclk_count_measured -= feedback.mclk_count_correction;
+    427          			++feedback.flagU3;
+    428          		}
+    429          		if (audio.total_cnt_usb - audio.total_cnt_i2s <= AUDIO_FRAMES_IN_BUFFER / 4)
+    430          		{
+    431          			feedback.mclk_count_measured += feedback.mclk_count_correction;
+    432          			++feedback.flagU2;
+    433          		}
+    434          		if (audio.total_cnt_usb - audio.total_cnt_i2s <= AUDIO_FRAMES_IN_BUFFER / 8)
+    435          		{
+    436          			feedback.mclk_count_measured += feedback.mclk_count_correction * 2;
+    437          			++feedback.flagU1;
+    438          		}
+    439          	}
+    440          	else
+    441          	{
+    442          		++feedback.flagO;
+    443          		feedback.mclk_count_measured += feedback.mclk_count_correction * 4;
+    444          	}
+    445          
+    446          	feedback_1014 = AUDIO_MCLK_FEEDBACK_1014(feedback.mclk_count_measured);
+    447          	feedback.feedback_data[0] = feedback_1014 & 0xFF;
+    448          	feedback.feedback_data[1] = (feedback_1014 >> 8) & 0xFF;
+    449          	feedback.feedback_data[2] = (feedback_1014 >> 16) & 0xFF;
+    450          	feedback.feedback_data[3] = (feedback_1014 >> 24) & 0xFF;
+    451          
+    452          	audio.feedback = true;
+    453          }
+    454          
+    455          //--------------------------------------------
+    456          static void start_mclk_count(void)
+    457          {
+    458          	feedback.mclk_count_expected = (uint32_t)(audio_out_drv.get_mclk() / 1000 * (1 << AUDIO_FMCLK_MEASUREINT_MS_POWER_OF_TWO));
+    459          	feedback.mclk_count_correction = feedback.mclk_count_expected / 2048;
+    460          	audio.feedback = false;
+    461          	audio_out_drv.mclk_set_sof((1 << AUDIO_FMCLK_MEASUREINT_FR_POWER_OF_TWO) - 1);
+    462          	audio_out_drv.mclk_start_count(mclk_callback);
+    463          }
+    464          
+    465          //--------------------------------------------
+    466          static void stop_mclk_count(void)
+    467          {
+    468          	audio_out_drv.mclk_stop_count();
+    469          	audio.feedback = false;
+    470          }
+    471          
+    472          
+    473          //--------------------------------------------
+    474          static usbd_respond uac_getdesc(usbd_ctlreq *req, void **address, uint16_t *length)
+    475          {
+    476          	uint8_t dtype = req->wValue >> 8;
+    477          	uint8_t dnumber = req->wValue;
+    478          	const void* desc;
+    479          	uint16_t len = 0;
+    480          
+    481          	switch (dtype)
+    482          	{
+    483          	case USB_DTYPE_DEVICE:
+    484          		desc = &device_desc;
+    485          		break;
+    486          	case USB_DTYPE_CONFIGURATION:
+    487          		desc = &config_desc;
+    488          		len = sizeof(config_desc);
+    489          		break;
+    490          	case USB_DTYPE_STRING:
+    491          		if (dnumber < sizeof(dtable) / sizeof(dtable[0]))
+    492          		{
+    493          			desc = dtable[dnumber];
+    494          		}
+    495          		else
+    496          		{
+    497          			return usbd_fail;
+    498          		}
+    499          		break;
+    500          	default:
+    501          		return usbd_fail;
+    502          	}
+    503          	if (len == 0)
+    504          	{
+    505          		len = ((struct usb_header_descriptor*)desc)->bLength;
+    506          	}
+    507          	*address = (void*)desc;
+    508          	*length = len;
+    509          	return usbd_ack;
+    510          };
+    511          
+    512          //--------------------------------------------
+    513          static usbd_respond uac_feature_control(usbd_device *dev, usbd_ctlreq *req)
+    514          {
+    515          	uint8_t length;
+    516          	// Channel Number (ADC-1 5.2.1)
+    517          	uint8_t cn = req->wValue & 0xFF;
+    518          	// Control Selector (ADC-1 5.2.1)
+    519          	uint8_t cs = req->wValue >> 8;
+    520          
+    521          	switch (cs)
+    522          	{
+    523          	case USB_UAC_FU_MUTE_CONTROL:
+    524          		{
+    525          			// Mute Control (ADC-1 5.2.2.4.3.1)
+    526          			switch (req->bRequest)
+    527          			{
+    528          			case USB_UAC_GET_CUR:
+    529          				if (cn == 0xFF)
+    530          				{
+    531          #if AUDIO_CHANNELS == 1
+    532          					struct usb_uac_form2_mute_control_parameter_sz2_block *block = (struct usb_uac_form2_mute_control_parameter_sz2_block *)&buff_uac_ctrl[0];
+    533          					block->bMute[0] = audio.mute[0];
+    534          					block->bMute[1] = audio.mute[1];
+    535          					length = sizeof(struct usb_uac_form2_mute_control_parameter_sz2_block);
+    536          #else
+    537          					struct usb_uac_form2_mute_control_parameter_sz3_block *block = (struct usb_uac_form2_mute_control_parameter_sz3_block *)&buff_uac_ctrl[0];
+    538          					block->bMute[0] = audio.mute[0];
+    539          					block->bMute[1] = audio.mute[1];
+    540          					block->bMute[2] = audio.mute[2];
+    541          					length = sizeof(struct usb_uac_form2_mute_control_parameter_sz3_block);
+    542          #endif
+    543          				}
+    544          				else
+    545          				{
+    546          					struct usb_uac_form1_mute_control_parameter_block *block = (struct usb_uac_form1_mute_control_parameter_block *)&buff_uac_ctrl[0];
+    547          					block->bMute = audio.mute[0];
+    548          					length = sizeof(struct usb_uac_form1_mute_control_parameter_block);
+    549          				}
+    550          				dev->status.data_ptr = &buff_uac_ctrl[0];
+    551          				dev->status.data_count = length < req->wLength ? length : req->wLength;
+    552          				return usbd_ack;
+    553          			case USB_UAC_SET_CUR:
+    554          				if (cn == 0xFF)
+    555          				{
+    556          					audio.mute[0] = req->data[0];
+    557          					audio.mute[1] = req->data[1];
+    558          #if AUDIO_CHANNELS == 2
+    559          					audio.mute[2] = req->data[2];
+    560          #endif
+    561          				}
+    562          				else
+    563          				{
+    564          					audio.mute[cn] = req->data[0];
+    565          				}
+    566          				return usbd_ack;
+    567          			}
+    568          		}
+    569          	}
+    570          	return usbd_fail;
+    571          }
+    572          
+    573          //--------------------------------------------
+    574          static usbd_respond uac_control(usbd_device *dev, usbd_ctlreq *req, usbd_rqc_callback *callback)
+    575          {
+    576          	if (((USB_REQ_RECIPIENT | USB_REQ_TYPE) & req->bmRequestType) != (USB_REQ_INTERFACE | USB_REQ_CLASS))
+    577          	{
+    578          		if (req->bRequest == USB_STD_GET_INTERFACE)
+    579          		{
+    580          			if (req->wIndex == 1)
+    581          			{
+    582          				dev->status.data_ptr = &altset_num;
+    583          				dev->status.data_count = 1;
+    584          				return usbd_ack;
+    585          			}
+    586          		}
+    587          		if (req->bRequest == USB_STD_SET_INTERFACE)
+    588          		{
+    589          			altset_num = req->wValue;
+    590          			iface_num = req->wIndex;
+    591          			if (iface_num == 1 && altset_num == 1)
+    592          			{
+    593          				if (!audio.playback)
+    594          				{
+    595          					audio.cnt_i2s = 0;
+    596          					audio.cnt_usb = 0;
+    597          					audio.total_cnt_i2s = 0;
+    598          					audio.total_cnt_usb = 0;
+    599          					audio.start_i2s = true;
+    600          					audio.start_usb = true;
+    601          					start_mclk_count();
+    602          					usbd_ep_write(dev, UAC_TXD_EP, (void *)0, 0);
+    603          				}
+    604          			}
+    605          			if (iface_num == 1 && altset_num == 0)
+    606          			{
+    607          				if (audio.playback)
+    608          				{
+    609          					stop_mclk_count();
+    610          					audio.playback = false;
+    611          				}
+    612          			}
+    613          			return usbd_ack;
+    614          		}
+    615          		return usbd_fail;
+    616          	}
+    617          
+    618          	// Interface (ADC-1 5.2.1)
+    619          	uint8_t iface = req->wIndex & 0xFF;
+    620          	// Entity Id (ADC-1 5.2.1)
+    621          	uint8_t entity_id = req->wIndex >> 8;
+    622          
+    623          	switch (iface)
+    624          	{
+    625          	case UAC_CONTROL_INTERFACE:
+    626          		{
+    627          			switch (entity_id)
+    628          			{
+    629          			case UAC_FEATURE_UNIT_ID:
+    630          				return uac_feature_control(dev, req);
+    631          			}
+    632          		}
+    633          	}
+    634          	return usbd_fail;
+    635          }
+    636          
+    637          //--------------------------------------------
+    638          static void uac_callback(usbd_device *dev, uint8_t event, uint8_t ep)
+    639          {
+    640          	switch (event)
+    641          	{
+    642          	case usbd_evt_eprx:
+    643          		if (!audio.start_usb)
+    644          		{
+    645          			audio.playback = true;
+    646          			++audio.total_cnt_usb;
+    647          			++audio.cnt_usb;
+    648          			if (audio.cnt_usb == AUDIO_FRAMES_IN_BUFFER)
+    649          			{
+    650          				audio.cnt_usb = 0;
+    651          			}
+    652          		}
+    653          		audio.start_usb = false;
+    654          		buff_usb_size[audio.cnt_usb] = usbd_ep_read(dev, UAC_RXD_EP, &buff_usb[audio.cnt_usb][0], UAC_DATA_SZ);
+    655          
+    656          #if BYTES_PER_AUDIO_SAMPLE == 4
+    657          		// The I2S interface converts the 16-bit LSB data received in SPIx_DR to
+    658          		// the serial transmission of 16 bits with the MSB (most significant bit) first.
+    659          		// But, since all 32 bits are received in LSB, it is necessary to swap 16-bit words.
+    660          		uint32_t *buf32;
+    661          		buf32 = (uint32_t *)&buff_usb[audio.cnt_usb][0];
+    662          		for (uint32_t cnt = 0; cnt < buff_usb_size[audio.cnt_usb] / sizeof(uint32_t); cnt++)
+    663          		{
+    664          			audio_out_drv.convert(&buf32[cnt], &buf32[cnt]);
+    665          		}
+    666          #endif
+    667          
+    668          		if (audio.start_i2s && audio.cnt_usb >= AUDIO_FRAMES_IN_BUFFER / 2)
+    669          		{
+    670          			audio.start_i2s = false;
+    671          			audio_out_drv.write_dma_txbuf(&buff_usb[audio.cnt_i2s][0], buff_usb_size[audio.cnt_i2s]);
+    672          		}
+    673          		break;
+    674          	case usbd_evt_eptx:
+    675          		if (audio.feedback)
+    676          		{
+    677          			usbd_ep_write(dev, UAC_TXD_EP, &feedback.feedback_data[0], sizeof(feedback.feedback_data));
+    678          			audio.feedback = false;
+    679          		}
+    680          		else
+    681          		{
+    682          			usbd_ep_write(dev, UAC_TXD_EP, (void *)0, 0);
+    683          		}
+    684          		break;
+    685          	default:
+    686          		break;
+    687          	}
+    688          }
+    689          
+    690          //--------------------------------------------
+    691          static void i2s_tx_complete_callback(void)
+    692          {
+    693          	if (audio.playback)
+    694          	{
+    695          		if (audio.total_cnt_i2s < audio.total_cnt_usb)
+    696          		{
+    697          			++audio.total_cnt_i2s;
+    698          			++audio.cnt_i2s;
+    699          			if (audio.cnt_i2s == AUDIO_FRAMES_IN_BUFFER)
+    700          			{
+    701          				audio.cnt_i2s = 0;
+    702          			}
+    703          		}
+    704          		else
+    705          		{
+    706          			++feedback.flagE;
+    707          		}
+    708          		audio_out_drv.write_dma_txbuf(&buff_usb[audio.cnt_i2s][0], buff_usb_size[audio.cnt_i2s]);
+    709          	}
+    710          }
+    711          
+    712          //--------------------------------------------
+    713          static usbd_respond uac_setconf(usbd_device *dev, uint8_t cfg)
+    714          {
+    715          	switch (cfg)
+    716          	{
+    717          	case 0:
+    718          		// deconfiguring device
+    719          		usbd_ep_deconfig(dev, UAC_RXD_EP);
+    720          		usbd_ep_deconfig(dev, UAC_TXD_EP);
+    721          		usbd_reg_endpoint(dev, UAC_RXD_EP, NULL);
+    722          		usbd_reg_endpoint(dev, UAC_TXD_EP, NULL);
+    723          		return usbd_ack;
+    724          	case 1:
+    725                  // configuring device
+    726          		usbd_ep_config(dev, UAC_RXD_EP, USB_EPTYPE_ISOCHRONOUS, UAC_DATA_SZ);
+    727          		usbd_ep_config(dev, UAC_TXD_EP, USB_EPTYPE_ISOCHRONOUS, UAC_FEEDBACK_SZ);
+    728          		usbd_reg_endpoint(dev, UAC_RXD_EP, uac_callback);
+    729          		usbd_reg_endpoint(dev, UAC_TXD_EP, uac_callback);
+    730          		return usbd_ack;
+    731          	default:
+    732          		return usbd_fail;
+    733          	}
+    734          }
+    735          
+    736          //--------------------------------------------
+    737          void usb_uac_i2s_init(void)
+    738          {
+    739          	audio_out_drv.init();
+    740          	audio_out_drv.init_dma_txbuf(i2s_tx_complete_callback);
+    741          
+    742          	usbd_hw_init(&udev);
+    743          	usbd_init(&udev, &usbd_hw, UAC_EP0_SIZE, ubuf, sizeof(ubuf));
+    744          	usbd_reg_control(&udev, uac_control);
+    745          	usbd_reg_config(&udev, uac_setconf);
+    746          	usbd_reg_descr(&udev, uac_getdesc);
+    747          }
+    748          
+    749          //--------------------------------------------
+    750          void usb_uac_i2s_loop(void)
+    751          {
+    752          	usbd_enable(&udev, true);
+    753          	usbd_connect(&udev, true);
+    754          	while (1);
+    755          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   i2s_tx_complete_callback
+         8   -- Indirect call
+       4   mclk_callback
+      16   start_mclk_count
+        16   -- Indirect call
+        16   -> __aeabi_d2uiz
+        16   -> __aeabi_ddiv
+        16   -> __aeabi_dmul
+       8   stop_mclk_count
+         8   -- Indirect call
+      32   uac_callback
+        32   -- Indirect call
+        32   -> usbd_ep_read
+        32   -> usbd_ep_write
+      24   uac_control
+        24   -> start_mclk_count
+        24   -> stop_mclk_count
+        24   -> uac_feature_control
+        24   -> usbd_ep_write
+      12   uac_feature_control
+      16   uac_getdesc
+      16   uac_setconf
+        16   -> usbd_ep_config
+        16   -> usbd_ep_deconfig
+        16   -> usbd_reg_endpoint
+      16   usb_uac_i2s_init
+        16   -- Indirect call
+        16   -> usbd_hw_init
+        16   -> usbd_init
+        16   -> usbd_reg_config
+        16   -> usbd_reg_control
+        16   -> usbd_reg_descr
+       8   usb_uac_i2s_loop
+         8   -> usbd_connect
+         8   -> usbd_enable
+      16   usbd_connect
+        16   -- Indirect call
+      16   usbd_enable
+        16   -- Indirect call
+      24   usbd_ep_config
+        24   -- Indirect call
+      16   usbd_ep_deconfig
+        16   -- Indirect call
+      24   usbd_ep_read
+        24   -- Indirect call
+      24   usbd_ep_write
+        24   -- Indirect call
+       8   usbd_init
+       0   usbd_reg_config
+       0   usbd_reg_control
+       0   usbd_reg_descr
+       0   usbd_reg_endpoint
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable11
+       4  ??DataTable11_1
+       4  ??DataTable11_10
+       4  ??DataTable11_11
+       4  ??DataTable11_12
+       4  ??DataTable11_13
+       4  ??DataTable11_14
+       4  ??DataTable11_15
+       4  ??DataTable11_16
+       4  ??DataTable11_17
+       4  ??DataTable11_18
+       4  ??DataTable11_19
+       4  ??DataTable11_2
+       4  ??DataTable11_20
+       4  ??DataTable11_21
+       4  ??DataTable11_22
+       4  ??DataTable11_3
+       4  ??DataTable11_4
+       4  ??DataTable11_5
+       4  ??DataTable11_6
+       4  ??DataTable11_7
+       4  ??DataTable11_8
+       4  ??DataTable11_9
+       1  altset_num
+      20  audio
+      16  buff_uac_ctrl
+   3'136  buff_usb
+      32  buff_usb_size
+     132  config_desc
+      20  device_desc
+      12  dtable
+      44  feedback
+      78  i2s_tx_complete_callback
+       1  iface_num
+       4  lang_desc
+      54  manuf_desc_en
+     176  mclk_callback
+      36  prod_desc_en
+      74  start_mclk_count
+      20  stop_mclk_count
+     180  uac_callback
+     210  uac_control
+     146  uac_feature_control
+     100  uac_getdesc
+     114  uac_setconf
+     128  ubuf
+     100  udev
+      64  usb_uac_i2s_init
+      22  usb_uac_i2s_loop
+      18  usbd_connect
+      18  usbd_enable
+      30  usbd_ep_config
+      18  usbd_ep_deconfig
+      28  usbd_ep_read
+      28  usbd_ep_write
+      26  usbd_init
+       4  usbd_reg_config
+       4  usbd_reg_control
+       4  usbd_reg_descr
+      16  usbd_reg_endpoint
+
+ 
+ 3'478 bytes in section .bss
+   258 bytes in section .rodata
+ 1'470 bytes in section .text
+ 
+ 1'470 bytes of CODE  memory
+   258 bytes of CONST memory
+ 3'478 bytes of DATA  memory
+
+Errors: none
+Warnings: none

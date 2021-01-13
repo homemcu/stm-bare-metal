@@ -1,0 +1,504 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V8.50.1.245/W32 for ARM         09/Jan/2021  10:06:22
+# Copyright 1999-2020 IAR Systems AB.
+#
+#    Cpu mode             
+#    Endian            =  little
+#    Source file       =
+#        C:\Programming\Microcontrollers\Devices\3rd-party\drivers\libusb_stm32\src\usbd_core.c
+#    Command line      =
+#        -f C:\Users\18EE~1\AppData\Local\Temp\EW7AD9.tmp
+#        (C:\Programming\Microcontrollers\Devices\3rd-party\drivers\libusb_stm32\src\usbd_core.c
+#        -D STM32F411xE -D HSE_VALUE=25000000 -D USBD_OTGFS --preprocess=s
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -lcN
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj
+#        --no_cse --no_unroll --no_inline --no_code_motion --no_tbaa
+#        --no_clustering --no_scheduling --debug --endian=little
+#        --cpu=Cortex-M4 -e --fpu=VFPv4_sp --dlib_config "C:\Program Files
+#        (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\inc\c\DLib_Config_Normal.h" -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\src\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\hal\inc\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\drv\audio-out\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\class\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\uac-dac\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\cpu\stm32f411ce\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\platform\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\core\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\device\ST\STM32F4xx\Include\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\libusb_stm32\inc\
+#        -On)
+#    Locale            =  C
+#    List file         =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List\usbd_core.lst
+#    Object file       =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\usbd_core.o
+#    Runtime model:       
+#      __SystemLibrary =  DLib
+#      __dlib_version  =  6
+#
+###############################################################################
+
+C:\Programming\Microcontrollers\Devices\3rd-party\drivers\libusb_stm32\src\usbd_core.c
+      1          /* This file is the part of the Lightweight USB device Stack for STM32 microcontrollers
+      2           *
+      3           * Copyright ©2016 Dmitry Filimonchuk <dmitrystu[at]gmail[dot]com>
+      4           * Modifications Copyright (c) 2018-2020 Vladimir Alemasov
+      5           *
+      6           * Licensed under the Apache License, Version 2.0 (the "License");
+      7           * you may not use this file except in compliance with the License.
+      8           * You may obtain a copy of the License at
+      9           *   http://www.apache.org/licenses/LICENSE-2.0
+     10           * Unless required by applicable law or agreed to in writing, software
+     11           * distributed under the License is distributed on an "AS IS" BASIS,
+     12           * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     13           * See the License for the specific language governing permissions and
+     14           * limitations under the License.
+     15           */
+     16          
+     17          #include <stdint.h>
+     18          #include <stdbool.h>
+     19          #include <string.h>
+     20          #include "usbd_core.h"
+     21          #include "usb_std.h"
+     22          
+     23          #define MIN(a, b) ((a) < (b)) ? (a) : (b)
+     24          
+     25          static void usbd_process_ep0 (usbd_device *dev, uint8_t event, uint8_t ep);
+     26          
+     27          /** \brief Resets USB device state
+     28           * \param dev pointer to usb device
+     29           * \return none
+     30           */
+     31          static void usbd_process_reset(usbd_device *dev) {
+     32              dev->status.device_state = usbd_state_default;
+     33              dev->status.control_state = usbd_ctl_idle;
+     34              dev->status.device_cfg = 0;
+     35              dev->driver->ep_config(0, USB_EPTYPE_CONTROL, dev->status.ep0size);
+     36              dev->endpoint[0] = usbd_process_ep0;
+     37              dev->driver->setaddr(0);
+     38          }
+     39          
+     40          /** \brief Callback that sets USB device address
+     41           * \param dev pointer to usb device
+     42           * \param req pointer to usb control request data
+     43           * \return none
+     44           */
+     45          static void usbd_set_address (usbd_device *dev, usbd_ctlreq *req) {
+     46              dev->driver->setaddr(req->wValue);
+     47              dev->status.device_state = (req->wValue) ? usbd_state_addressed : usbd_state_default;
+     48          }
+     49          
+     50          /** \brief Control transfer completion callback processing
+     51           * \param dev pointer to the usb device
+     52           * \return none
+     53           */
+     54          static void usbd_process_callback (usbd_device *dev) {
+     55              if (dev->complete_callback) {
+     56                  dev->complete_callback(dev, dev->status.data_buf);
+     57                  dev->complete_callback = 0;
+     58              }
+     59          }
+     60          
+     61          /** \brief SET_CONFIG request processing
+     62           * \param dev usbd_device
+     63           * \param config config number from request
+     64           * \return usbd_ack if success
+     65           */
+     66          static usbd_respond usbd_configure(usbd_device *dev, uint8_t config) {
+     67              if (dev->config_callback) {
+     68                  if (dev->config_callback(dev, config) == usbd_ack) {
+     69                      dev->status.device_cfg = config;
+     70                      dev->status.device_state = (config) ? usbd_state_configured : usbd_state_addressed;
+     71                      return usbd_ack;
+     72                  }
+     73              }
+     74              return usbd_fail;
+     75          }
+     76          
+     77          
+     78          /** \brief Standard control request processing for device
+     79           * \param dev pointer to usb device
+     80           * \param req pointer to control request
+     81           * \return TRUE if request is handled
+     82           */
+     83          static usbd_respond usbd_process_devrq (usbd_device *dev, usbd_ctlreq *req) {
+     84              switch (req->bRequest) {
+     85              case USB_STD_CLEAR_FEATURE:
+     86                  /* not yet supported */
+     87                  break;
+     88              case USB_STD_GET_CONFIG:
+     89                  req->data[0] = dev->status.device_cfg;
+     90                  return usbd_ack;
+     91              case USB_STD_GET_DESCRIPTOR:
+     92                  if (req->wValue == ((USB_DTYPE_STRING << 8) | INTSERIALNO_DESCRIPTOR )) {
+     93                      dev->status.data_count = dev->driver->get_serialno_desc(req->data);
+     94                      return usbd_ack;
+     95                  } else {
+     96                      if (dev->descriptor_callback) {
+     97                          return dev->descriptor_callback(req, &(dev->status.data_ptr), &(dev->status.data_count));
+     98                      }
+     99                  }
+    100                  break;
+    101              case USB_STD_GET_STATUS:
+    102                  req->data[0] = 0;
+    103                  req->data[1] = 0;
+    104                  return usbd_ack;
+    105              case USB_STD_SET_ADDRESS:
+    106                  if (usbd_getinfo(dev) & USBD_HW_ADDRFST) {
+    107                      usbd_set_address(dev, req);
+    108                  } else {
+    109                      dev->complete_callback = usbd_set_address;
+    110                  }
+    111                  return usbd_ack;
+    112              case USB_STD_SET_CONFIG:
+    113                  return usbd_configure(dev, req->wValue);
+    114              case USB_STD_SET_DESCRIPTOR:
+    115                  /* should be externally handled */
+    116                  break;
+    117              case USB_STD_SET_FEATURE:
+    118                  /* not yet supported */
+    119                  break;
+    120              default:
+    121                  break;
+    122              }
+    123              return usbd_fail;
+    124          }
+    125          
+    126          /** \brief Standard control request processing for interface
+    127           * \param dev pointer to usb device
+    128           * \param req pointer to control request
+    129           * \return TRUE if request is handled
+    130           */
+    131          static usbd_respond usbd_process_intrq(usbd_device *dev, usbd_ctlreq *req) {
+    132              (void)dev;
+    133              switch (req->bRequest) {
+    134              case USB_STD_GET_STATUS:
+    135                  req->data[0] = 0;
+    136                  req->data[1] = 0;
+    137                  return usbd_ack;
+    138              default:
+    139                  break;
+    140              }
+    141              return usbd_fail;
+    142          }
+    143          
+    144          /** \brief Standard control request processing for endpoint
+    145           * \param dev pointer to usb device
+    146           * \param req pointer to control request
+    147           * \return TRUE if request is handled
+    148           */
+    149          static usbd_respond usbd_process_eptrq(usbd_device *dev, usbd_ctlreq *req) {
+    150              switch (req->bRequest) {
+    151              case USB_STD_SET_FEATURE:
+    152                  dev->driver->ep_setstall(req->wIndex, 1);
+    153                  return usbd_ack;
+    154              case USB_STD_CLEAR_FEATURE:
+    155                  dev->driver->ep_setstall(req->wIndex, 0);
+    156                  return usbd_ack;
+    157              case USB_STD_GET_STATUS:
+    158                  req->data[0] = dev->driver->ep_isstalled(req->wIndex) ? 1 : 0;
+    159                  req->data[1] = 0;
+    160                  return usbd_ack;
+    161              default:
+    162                  break;
+    163              }
+    164              return usbd_fail;
+    165          }
+    166          
+    167          /** \brief Processing control request
+    168           * \param dev pointer to usb device
+    169           * \param req pointer to usb control request
+    170           * \return TRUE if request is handled
+    171           */
+    172          static usbd_respond usbd_process_request(usbd_device *dev, usbd_ctlreq *req) {
+    173              /* processing control request by callback */
+    174              if (dev->control_callback) {
+    175                  usbd_respond r = dev->control_callback(dev, req, &(dev->complete_callback));
+    176                  if (r != usbd_fail) return r;
+    177              }
+    178              /* continuing standard USB requests */
+    179              switch (req->bmRequestType & (USB_REQ_TYPE | USB_REQ_RECIPIENT)) {
+    180              case USB_REQ_STANDARD | USB_REQ_DEVICE:
+    181                  return usbd_process_devrq(dev, req);
+    182              case USB_REQ_STANDARD | USB_REQ_INTERFACE:
+    183                  return usbd_process_intrq(dev, req);
+    184              case USB_REQ_STANDARD | USB_REQ_ENDPOINT:
+    185                  return usbd_process_eptrq(dev, req);
+    186              default:
+    187                  break;
+    188              }
+    189              return usbd_fail;
+    190          }
+    191          
+    192          
+    193          /** \brief Control endpoint stall (STALL PID)
+    194           * \param dev pointer to usb device
+    195           * \param ep endpoint number
+    196           */
+    197          static void usbd_stall_pid(usbd_device *dev, uint8_t ep) {
+    198              dev->driver->ep_setstall(ep & 0x7F, 1);
+    199              dev->driver->ep_setstall(ep | 0x80, 1);
+    200              dev->status.control_state = usbd_ctl_idle;
+    201          }
+    202          
+    203          
+    204          /** \brief Control endpoint TX event processing
+    205           * \param dev pointer to usb device
+    206           * \param ep endpoint number
+    207           */
+    208          static void usbd_process_eptx(usbd_device *dev, uint8_t ep) {
+    209              int32_t _t;
+    210              switch (dev->status.control_state) {
+    211              case usbd_ctl_ztxdata:
+    212              case usbd_ctl_txdata:
+    213                  _t = MIN(dev->status.data_count, dev->status.ep0size);
+    214                  dev->driver->ep_write(ep, dev->status.data_ptr, _t);
+    215                  dev->status.data_ptr = (void *)((uint8_t *)dev->status.data_ptr + _t);
+    216                  dev->status.data_count -= _t;
+    217                  /* if all data is not sent */
+    218                  if (0 != dev->status.data_count) break;
+    219                  /* if last packet has a EP0 size and host awaiting for the more data ZLP should be sent*/
+    220                  /* if ZLP required, control state will be unchanged, therefore next TX event sends ZLP */
+    221                  if ( usbd_ctl_txdata == dev->status.control_state || _t != dev->status.ep0size ) {
+    222                      dev->status.control_state = usbd_ctl_lastdata; /* no ZLP required */
+    223                  }
+    224                  break;
+    225              case usbd_ctl_lastdata:
+    226                  dev->status.control_state = usbd_ctl_statusout;
+    227                  break;
+    228              case usbd_ctl_statusin:
+    229                  dev->status.control_state = usbd_ctl_idle;
+    230                  usbd_process_callback(dev);
+    231                  return;
+    232              default:
+    233                  /* unexpected TX completion */
+    234                  /* just skipping it */
+    235                  break;
+    236              }
+    237          }
+    238          
+    239          /** \brief Control endpoint RX event processing
+    240           * \param dev pointer to usb device
+    241           * \param ep endpoint number
+    242           */
+    243          static void usbd_process_eprx(usbd_device *dev, uint8_t ep) {
+    244              uint16_t _t;
+    245              usbd_ctlreq *const req = dev->status.data_buf;
+    246              switch (dev->status.control_state) {
+    247              case usbd_ctl_idle:
+    248                  /* read SETUP packet, send STALL_PID if incorrect packet length */
+    249                  if (0x08 !=  dev->driver->ep_read(ep, req, dev->status.data_maxsize)) {
+    250                      usbd_stall_pid(dev, ep);
+    251                      return;
+    252                  }
+    253                  dev->status.data_ptr = req->data;
+    254                  dev->status.data_count = req->wLength;
+    255                  /* processing request with no payload data*/
+    256                  if ((req->bmRequestType & USB_REQ_DEVTOHOST) || (0 == req->wLength)) {
+    257                      break;
+    258                  }
+    259                  /* checking available memory for DATA OUT stage */
+    260                  if (req->wLength > dev->status.data_maxsize) {
+    261                      usbd_stall_pid(dev, ep);
+    262                      return;
+    263                  }
+    264                  /* continue DATA OUT stage */
+    265                  dev->status.control_state = usbd_ctl_rxdata;
+    266                  return;
+    267              case usbd_ctl_rxdata:
+    268                  /*receive DATA OUT packet(s) */
+    269                  _t = dev->driver->ep_read(ep, dev->status.data_ptr, dev->status.data_count);
+    270                  if (dev->status.data_count < _t) {
+    271                  /* if received packet is large than expected */
+    272                  /* Must be error. Let's drop this request */
+    273                      usbd_stall_pid(dev, ep);
+    274                      return;
+    275                  } else if (dev->status.data_count != _t) {
+    276                  /* if all data payload was not received yet */
+    277                      dev->status.data_count -= _t;
+    278                      dev->status.data_ptr = (void *)((uint8_t *)dev->status.data_ptr + _t);
+    279                      return;
+    280                  }
+    281                  break;
+    282              case usbd_ctl_statusout:
+    283                  /* fake reading STATUS OUT */
+    284                  dev->driver->ep_read(ep, 0, 0);
+    285                  dev->status.control_state = usbd_ctl_idle;
+    286                  usbd_process_callback(dev);
+    287                  return;
+    288              default:
+    289                  /* unexpected RX packet */
+    290                  usbd_stall_pid(dev, ep);
+    291                  return;
+    292              }
+    293              /* usb request received. let's handle it */
+    294              dev->status.data_ptr = req->data;
+    295              dev->status.data_count = /*req->wLength;*/dev->status.data_maxsize;
+    296              switch (usbd_process_request(dev, req)) {
+    297              case usbd_ack:
+    298                  if (req->bmRequestType & USB_REQ_DEVTOHOST) {
+    299                      /* return data from function */
+    300                      if (dev->status.data_count >= req->wLength) {
+    301                          dev->status.data_count = req->wLength;
+    302                          dev->status.control_state = usbd_ctl_txdata;
+    303                      } else {
+    304                          /* DATA IN packet smaller than requested */
+    305                          /* ZLP maybe wanted */
+    306                          dev->status.control_state = usbd_ctl_ztxdata;
+    307                      }
+    308                        usbd_process_eptx(dev, ep | 0x80);
+    309                        return;
+    310          
+    311                  } else {
+    312                      /* confirming by ZLP in STATUS_IN stage */
+    313                      dev->driver->ep_write(ep | 0x80, 0, 0);
+    314                      dev->status.control_state = usbd_ctl_statusin;
+    315                  }
+    316                  break;
+    317              case usbd_nak:
+    318                  dev->status.control_state = usbd_ctl_statusin;
+    319                  break;
+    320              default:
+    321                    usbd_stall_pid(dev, ep);
+    322                    return;
+    323              }
+    324          }
+    325          
+    326          /** \brief Control endpoint 0 event processing callback
+    327           * \param dev usb device
+    328           * \param event endpoint event
+    329           */
+    330          static void usbd_process_ep0 (usbd_device *dev, uint8_t event, uint8_t ep) {
+    331              switch (event) {
+    332              case usbd_evt_epsetup:
+    333                  /* force switch to setup state */
+    334                  dev->status.control_state = usbd_ctl_idle;
+    335                  dev->complete_callback = 0;
+    336              case usbd_evt_eprx:
+    337                  usbd_process_eprx(dev, ep);
+    338                  return;
+    339              case usbd_evt_eptx:
+    340                  usbd_process_eptx(dev, ep);
+    341                  return;
+    342              default:
+    343                  break;
+    344              }
+    345          }
+    346          
+    347          
+    348          /** \brief General event processing callback
+    349           * \param dev usb device
+    350           * \param evt usb event
+    351           * \param ep active endpoint
+    352           */
+    353          static void usbd_process_evt(usbd_device *dev, uint8_t evt, uint8_t ep) {
+    354              switch (evt) {
+    355              case usbd_evt_reset:
+    356                  usbd_process_reset(dev);
+    357                  break;
+    358              case usbd_evt_eprx:
+    359              case usbd_evt_eptx:
+    360              case usbd_evt_epsetup:
+    361                  if (dev->endpoint[ep & 0x07]) dev->endpoint[ep & 0x07](dev, evt, ep);
+    362                  break;
+    363              default:
+    364                  break;
+    365              }
+    366              if (dev->events[evt]) dev->events[evt](dev, evt, ep);
+    367          }
+    368          
+    369          void usbd_poll(usbd_device *dev) {
+    370              dev->driver->poll(dev, usbd_process_evt);
+    371          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      16   usbd_configure
+        16   -- Indirect call
+       8   usbd_getinfo
+         8   -- Indirect call
+       8   usbd_poll
+         8   -- Indirect call
+       8   usbd_process_callback
+         8   -- Indirect call
+      16   usbd_process_devrq
+        16   -- Indirect call
+        16   -> usbd_configure
+        16   -> usbd_getinfo
+        16   -> usbd_set_address
+      16   usbd_process_ep0
+        16   -> usbd_process_eprx
+        16   -> usbd_process_eptx
+      24   usbd_process_eprx
+        24   -- Indirect call
+        24   -> usbd_process_callback
+        24   -> usbd_process_eptx
+        24   -> usbd_process_request
+        24   -> usbd_stall_pid
+      16   usbd_process_eptrq
+        16   -- Indirect call
+      16   usbd_process_eptx
+        16   -- Indirect call
+        16   -> usbd_process_callback
+      16   usbd_process_evt
+        16   -- Indirect call
+        16   -> usbd_process_reset
+       0   usbd_process_intrq
+      16   usbd_process_request
+        16   -- Indirect call
+        16   -> usbd_process_devrq
+        16   -> usbd_process_eptrq
+        16   -> usbd_process_intrq
+       8   usbd_process_reset
+         8   -- Indirect call
+      16   usbd_set_address
+        16   -- Indirect call
+      16   usbd_stall_pid
+        16   -- Indirect call
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable2
+       4  ??DataTable2_1
+      56  usbd_configure
+      12  usbd_getinfo
+      16  usbd_poll
+      24  usbd_process_callback
+     168  usbd_process_devrq
+      62  usbd_process_ep0
+     360  usbd_process_eprx
+      86  usbd_process_eptrq
+     142  usbd_process_eptx
+     116  usbd_process_evt
+      24  usbd_process_intrq
+      90  usbd_process_request
+      54  usbd_process_reset
+      34  usbd_set_address
+      40  usbd_stall_pid
+
+ 
+ 1'292 bytes in section .text
+ 
+ 1'292 bytes of CODE memory
+
+Errors: none
+Warnings: none

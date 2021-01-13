@@ -79,6 +79,10 @@ uint8_t hw_get_pin(GPIO_TypeDef* gpioport, uint8_t pin)
 
 //--------------------------------------------
 // configure given line as external interrupt source (EXTI handler)
+// pin => 0 - 15
+// portidx => 0 - 10
+// irqcfg => GPIO_IRQ_FALLING, GPIO_IRQ_RISING, GPIO_IRQ_CHANGE
+// irqpr => 0 - 15
 void hw_cfg_extirq(uint8_t portidx, uint8_t pin, uint8_t irqcfg, uint8_t irqpr)
 {
 	// make sure module is on

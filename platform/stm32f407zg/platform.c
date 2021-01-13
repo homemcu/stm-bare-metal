@@ -50,6 +50,8 @@ void delay_us(uint32_t delay_us)
 //--------------------------------------------
 // HSE crystal oscillator 8 MHz
 // Define HSE_VALUE=8000000 in Makefile(GCC ARM) or Preprocessor tab(IAR)
+// fHSE = 8 MHz (HSE)
+// fSYSCLK = 168 MHz (SYSCLK)
 // fHCLK = 168 MHz (AHB)
 // fPCLK1 = 42 MHz (APB1)
 // fPCLK2 = 84 MHz (APB2)
@@ -79,6 +81,7 @@ static void SetSysClock(void)
 	RCC->CFGR |= RCC_CFGR_PPRE1_DIV4;
 
 	// configure the main PLL
+	// SYSCLK = HSE / PLL_M * PLL_N / PLL_P
 	RCC->PLLCFGR = PLL_M | (PLL_N << 6) | (((PLL_P >> 1) - 1) << 16) | RCC_PLLCFGR_PLLSRC_HSE | (PLL_Q << 24);
 
 	// enable the main PLL

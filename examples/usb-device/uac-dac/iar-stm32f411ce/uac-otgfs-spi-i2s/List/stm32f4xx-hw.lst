@@ -1,0 +1,211 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V8.50.1.245/W32 for ARM         09/Jan/2021  10:06:22
+# Copyright 1999-2020 IAR Systems AB.
+#
+#    Cpu mode             
+#    Endian            =  little
+#    Source file       =
+#        C:\Programming\Microcontrollers\Devices\cpu\stm32f411ce\stm32f4xx-hw.c
+#    Command line      =
+#        -f C:\Users\18EE~1\AppData\Local\Temp\EW78C2.tmp
+#        (C:\Programming\Microcontrollers\Devices\cpu\stm32f411ce\stm32f4xx-hw.c
+#        -D STM32F411xE -D HSE_VALUE=25000000 -D USBD_OTGFS --preprocess=s
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -lcN
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj
+#        --no_cse --no_unroll --no_inline --no_code_motion --no_tbaa
+#        --no_clustering --no_scheduling --debug --endian=little
+#        --cpu=Cortex-M4 -e --fpu=VFPv4_sp --dlib_config "C:\Program Files
+#        (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\inc\c\DLib_Config_Normal.h" -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\src\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\hal\inc\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\drv\audio-out\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\class\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\uac-dac\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\cpu\stm32f411ce\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\platform\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\core\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\device\ST\STM32F4xx\Include\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\libusb_stm32\inc\
+#        -On)
+#    Locale            =  C
+#    List file         =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List\stm32f4xx-hw.lst
+#    Object file       =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\stm32f4xx-hw.o
+#    Runtime model:       
+#      __SystemLibrary =  DLib
+#      __dlib_version  =  6
+#
+###############################################################################
+
+C:\Programming\Microcontrollers\Devices\cpu\stm32f411ce\stm32f4xx-hw.c
+      1          /*
+      2           * Copyright (c) 2014-2016 IBM Corporation.
+      3           * All rights reserved.
+      4           *
+      5           *  Redistribution and use in source and binary forms, with or without
+      6           *  modification, are permitted provided that the following conditions are met:
+      7           *  * Redistributions of source code must retain the above copyright
+      8           *    notice, this list of conditions and the following disclaimer.
+      9           *  * Redistributions in binary form must reproduce the above copyright
+     10           *    notice, this list of conditions and the following disclaimer in the
+     11           *    documentation and/or other materials provided with the distribution.
+     12           *  * Neither the name of the <organization> nor the
+     13           *    names of its contributors may be used to endorse or promote products
+     14           *    derived from this software without specific prior written permission.
+     15           *
+     16           * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+     17           * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+     18           * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+     19           * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+     20           * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+     21           * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+     22           * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+     23           * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+     24           * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+     25           * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+     26           */
+     27          
+     28          /*
+     29          * This file has been modified for STM32F4xx
+     30          * Copyright (c) 2018 Vladimir Alemasov
+     31          * All rights reserved
+     32          *
+     33          * This program and the accompanying materials are distributed under 
+     34          * the terms of GNU General Public License version 2 
+     35          * as published by the Free Software Foundation.
+     36          *
+     37          * This program is distributed in the hope that it will be useful,
+     38          * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     39          * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     40          * GNU General Public License for more details.
+     41          */
+     42          
+     43          #include "cpu.h"
+     44          #include "stm32f4xx-hw.h"
+     45          
+     46          #define GPIO_AFRLR(i)           ((i)>>3)
+     47          #define GPIO_AF_PINi(i,af)      ((af)<<(((i)&7)*GPIO_AF_BITS))
+     48          #define GPIO_AF_set(gpio,i,af)  ((gpio)->AFR[GPIO_AFRLR(i)] = \
+     49          								((gpio)->AFR[GPIO_AFRLR(i)] \
+     50          								& ~GPIO_AF_PINi(i,GPIO_AF_MASK)) \
+     51          								| GPIO_AF_PINi(i,af))
+     52          
+     53          //--------------------------------------------
+     54          // configure operation mode of GPIO pin
+     55          void hw_cfg_pin(GPIO_TypeDef* gpioport, uint8_t pin, uint16_t gpiocfg)
+     56          {
+     57          	uint8_t pin2 = 2 * pin;
+     58          
+     59          	GPIO_AF_set(gpioport, pin, gpiocfg & GPIO_AF_MASK);
+     60          	gpioport->MODER   = (gpioport->MODER   & ~(3 << pin2)) | (((gpiocfg >> GPIOCFG_MODE_SHIFT  ) & 3) << pin2);
+     61          	gpioport->OSPEEDR = (gpioport->OSPEEDR & ~(3 << pin2)) | (((gpiocfg >> GPIOCFG_OSPEED_SHIFT) & 3) << pin2);
+     62          	gpioport->OTYPER  = (gpioport->OTYPER  & ~(1 << pin )) | (((gpiocfg >> GPIOCFG_OTYPE_SHIFT ) & 1) << pin );
+     63          	gpioport->PUPDR   = (gpioport->PUPDR   & ~(3 << pin2)) | (((gpiocfg >> GPIOCFG_PUPD_SHIFT  ) & 3) << pin2);
+     64          }
+     65          
+     66          //--------------------------------------------
+     67          // set state of GPIO output pin
+     68          void hw_set_pin(GPIO_TypeDef* gpioport, uint8_t pin, uint8_t state)
+     69          {
+     70          	gpioport->ODR = (gpioport->ODR & ~(1 << pin)) | ((state & 1) << pin);
+     71          }
+     72          
+     73          //--------------------------------------------
+     74          // get state of GPIO input pin
+     75          uint8_t hw_get_pin(GPIO_TypeDef* gpioport, uint8_t pin)
+     76          {
+     77          	return (gpioport->IDR & (1 << pin)) >> pin;
+     78          }
+     79          
+     80          //--------------------------------------------
+     81          // configure given line as external interrupt source (EXTI handler)
+     82          // pin => 0 - 15
+     83          // portidx => 0 - 4, 7
+     84          // irqcfg => GPIO_IRQ_FALLING, GPIO_IRQ_RISING, GPIO_IRQ_CHANGE
+     85          // irqpr => 0 - 15
+     86          void hw_cfg_extirq(uint8_t portidx, uint8_t pin, uint8_t irqcfg, uint8_t irqpr)
+     87          {
+     88          	// make sure module is on
+     89          	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
+     90          
+     91          	// configure external interrupt (every irq line 0-15 can be configured with a 4-bit port index A-E,H)
+     92          	uint32_t tmp1 = (pin & 0x3) << 2;
+     93          	uint32_t tmp2 = ((uint32_t)0x0F) << tmp1;
+     94          	SYSCFG->EXTICR[pin >> 2] = (SYSCFG->EXTICR[pin >> 2] & ~tmp2) | (((uint32_t)portidx) << tmp1);
+     95          
+     96          	// configure trigger and enable irq
+     97          	uint32_t mask = (uint32_t)(1 << pin);
+     98          	EXTI->RTSR &= ~mask; // clear trigger
+     99          	EXTI->FTSR &= ~mask; // clear trigger
+    100          	switch (irqcfg & GPIO_IRQ_MASK)
+    101          	{
+    102          		case GPIO_IRQ_RISING:
+    103          			// trigger at rising edge
+    104          			EXTI->RTSR |= mask;
+    105          			break;
+    106          		case GPIO_IRQ_FALLING:
+    107          			// trigger at falling edge
+    108          			EXTI->FTSR |= mask;
+    109          			break;
+    110          		case GPIO_IRQ_CHANGE:
+    111          			// trigger at both edges
+    112          			EXTI->RTSR |= mask;
+    113          			EXTI->FTSR |= mask;
+    114          			break;
+    115          	}
+    116          	EXTI->IMR |= mask;   // enable IRQ (pin x for configured port)
+    117          
+    118          	// configure the NVIC
+    119          	uint8_t channel = (pin < 5) ? (EXTI0_IRQn + pin) : ((pin < 10) ? EXTI9_5_IRQn : EXTI15_10_IRQn);
+    120          	NVIC->IP[channel] = irqpr;
+    121          	NVIC->ISER[channel >> 5] = 1 << (channel & 0x1F);  // set enable IRQ
+    122          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      24   hw_cfg_extirq
+      16   hw_cfg_pin
+       0   hw_get_pin
+       4   hw_set_pin
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable1
+       4  ??DataTable1_1
+       4  ??DataTable1_2
+       4  ??DataTable1_3
+       4  ??DataTable1_4
+       4  ??DataTable1_5
+       4  ??DataTable1_6
+     276  hw_cfg_extirq
+     158  hw_cfg_pin
+      14  hw_get_pin
+      28  hw_set_pin
+
+ 
+ 504 bytes in section .text
+ 
+ 504 bytes of CODE memory
+
+Errors: none
+Warnings: none

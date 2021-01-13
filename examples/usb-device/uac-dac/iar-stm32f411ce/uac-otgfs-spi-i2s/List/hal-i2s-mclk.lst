@@ -1,0 +1,269 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V8.50.1.245/W32 for ARM         09/Jan/2021  10:06:21
+# Copyright 1999-2020 IAR Systems AB.
+#
+#    Cpu mode             
+#    Endian            =  little
+#    Source file       =
+#        C:\Programming\Microcontrollers\Devices\hal\src\stm32f411ce\hal-i2s-mclk.c
+#    Command line      =
+#        -f C:\Users\18EE~1\AppData\Local\Temp\EW763C.tmp
+#        (C:\Programming\Microcontrollers\Devices\hal\src\stm32f411ce\hal-i2s-mclk.c
+#        -D STM32F411xE -D HSE_VALUE=25000000 -D USBD_OTGFS --preprocess=s
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -lcN
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj
+#        --no_cse --no_unroll --no_inline --no_code_motion --no_tbaa
+#        --no_clustering --no_scheduling --debug --endian=little
+#        --cpu=Cortex-M4 -e --fpu=VFPv4_sp --dlib_config "C:\Program Files
+#        (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\inc\c\DLib_Config_Normal.h" -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\src\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\hal\inc\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\drv\audio-out\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\class\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\uac-dac\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\cpu\stm32f411ce\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\platform\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\core\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\device\ST\STM32F4xx\Include\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\libusb_stm32\inc\
+#        -On)
+#    Locale            =  C
+#    List file         =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List\hal-i2s-mclk.lst
+#    Object file       =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\hal-i2s-mclk.o
+#    Runtime model:       
+#      __SystemLibrary =  DLib
+#      __dlib_version  =  6
+#
+###############################################################################
+
+C:\Programming\Microcontrollers\Devices\hal\src\stm32f411ce\hal-i2s-mclk.c
+      1          /*
+      2          * Copyright (c) 2019, 2020 Vladimir Alemasov
+      3          * All rights reserved
+      4          *
+      5          * This program and the accompanying materials are distributed under 
+      6          * the terms of GNU General Public License version 2 
+      7          * as published by the Free Software Foundation.
+      8          *
+      9          * This program is distributed in the hope that it will be useful,
+     10          * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     11          * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     12          * GNU General Public License for more details.
+     13          */
+     14          
+     15          #include "platform.h"
+     16          #include "stm32f4xx-hw.h"
+     17          
+     18          //--------------------------------------------
+     19          // FRAMERATE FEEDBACK:
+     20          // TIM2 is used for measure real DAC framerate. I2S_MCK pin must be connected to TIM2_ETR.
+     21          // ETR pin is used as clock source for timer. OTG_FS core generates SOF pulse which is internally routed to ITR1 of TIM2.
+     22          //--------------------------------------------
+     23          
+     24          //--------------------------------------------
+     25          // TIM2(APB1, )
+     26          // GPIO_AF1_TIM2
+     27          // CH1:   PA0    PA5    PA15
+     28          // CH2:   PA1    PB3
+     29          // CH3:   PA2    PB10
+     30          // CH4:   PA3    PB11
+     31          // ETR:   PA0    PA5    PA15
+     32          
+     33          //--------------------------------------------
+     34          #define	PORT_MCLK      GPIO_A  // PA0  <-- MCLK
+     35          #define	PIN_MCLK       0
+     36          
+     37          //--------------------------------------------
+     38          #ifdef configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY
+     39          // = configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY in FreeRTOSConfig.h
+     40          #define TIM2_IRQ_PREEMPT_PRIORITY     (configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY + 1)
+     41          #else
+     42          #define TIM2_IRQ_PREEMPT_PRIORITY     6
+     43          #endif
+     44          
+     45          //--------------------------------------------
+     46          static uint32_t mclk;
+     47          static uint32_t mclk_count;
+     48          static uint32_t sof_max;
+     49          static uint32_t sof_count;
+     50          
+     51          //--------------------------------------------
+     52          void hal_i2s_mclk_init(void)
+     53          {
+     54          	// TIM2 clock enable
+     55          	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+     56          	hw_cfg_pin(GPIOx(PORT_MCLK), PIN_MCLK, GPIOCFG_MODE_ALT | GPIO_AF1_TIM2 | GPIOCFG_OSPEED_VHIGH | GPIOCFG_OTYPE_PUPD | GPIOCFG_PUPD_NONE);
+     57          
+     58          	NVIC_SetPriority(TIM2_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), TIM2_IRQ_PREEMPT_PRIORITY, 0));
+     59          }
+     60          
+     61          //--------------------------------------------
+     62          void hal_i2s_mclk_set_sof(uint32_t sof)
+     63          {
+     64          	sof_max = sof;
+     65          }
+     66          
+     67          //--------------------------------------------
+     68          void hal_i2s_mclk_start_count(void)
+     69          {
+     70          	mclk_count = 0;
+     71          	mclk = 0;
+     72          	sof_count = 0;
+     73          
+     74          	// TIM2 count reset
+     75          	TIM2->CNT = 0;
+     76          	// Timer clock = ETR pin, slave mode, trigger on ITR1
+     77          	TIM2->SMCR = TIM_SMCR_ECE | TIM_SMCR_TS_0 | TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1;
+     78          #ifdef USBD_OTGFS
+     79          	// Remap ITR1 to USB_FS SOF signal
+     80          	TIM2->OR = TIM_OR_ITR1_RMP_1;
+     81          #else
+     82          	// Remap ITR1 to USB_HS SOF signal
+     83          	TIM2->OR = TIM_OR_ITR1_RMP_0 | TIM_OR_ITR1_RMP_1;
+     84          #endif
+     85          	// TIM2 enable interrupt
+     86          	TIM2->DIER = TIM_DIER_TIE;
+     87          	// Enable TIM2 counting
+     88          	TIM2->CR1 = TIM_CR1_CEN;
+     89          
+     90          	NVIC_EnableIRQ(TIM2_IRQn);
+     91          }
+     92          
+     93          //--------------------------------------------
+     94          void hal_i2s_mclk_stop_count(void)
+     95          {
+     96          	NVIC_DisableIRQ(TIM2_IRQn);
+     97          
+     98          	// Disable slave move, can't stop the timer unless we do this first
+     99          	TIM2->SMCR = 0;
+    100          	// Stop TIM2
+    101          	TIM2->CR1 = 0;
+    102          }
+    103          
+    104          //--------------------------------------------
+    105          __WEAK void mclk_irq_callback(uint32_t mclk)
+    106          {
+    107          }
+    108          
+    109          //--------------------------------------------
+    110          void TIM2_IRQHandler(void)
+    111          {
+    112          	uint32_t count;
+    113          	uint32_t sr;
+    114          
+    115          	count = TIM2->CNT;
+    116          	sr = TIM2->SR;
+    117          	TIM2->SR = 0;
+    118          
+    119          	if (sr & TIM_SR_TIF)
+    120          	{
+    121          		if (count)
+    122          		{
+    123          			if (mclk_count < count)
+    124          			{
+    125          				mclk += count - mclk_count;
+    126          			}
+    127          			else
+    128          			{
+    129          				mclk += UINT32_MAX - mclk_count + count;
+    130          			}
+    131          			if (sof_count == sof_max)
+    132          			{
+    133          				mclk_irq_callback(mclk);
+    134          				mclk = 0;
+    135          				sof_count = 0;
+    136          			}
+    137          			else
+    138          			{
+    139          				sof_count++;
+    140          			}
+    141          			mclk_count = count;
+    142          		}
+    143          	}
+    144          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      12   NVIC_EncodePriority
+      24   TIM2_IRQHandler
+        24   -> mclk_irq_callback
+       0   __NVIC_DisableIRQ
+       0   __NVIC_EnableIRQ
+       0   __NVIC_GetPriorityGrouping
+       4   __NVIC_SetPriority
+       8   hal_i2s_mclk_init
+         8   -> NVIC_EncodePriority
+         8   -> __NVIC_GetPriorityGrouping
+         8   -> __NVIC_SetPriority
+         8   -> hw_cfg_pin
+       0   hal_i2s_mclk_set_sof
+       8   hal_i2s_mclk_start_count
+         8   -> __NVIC_EnableIRQ
+       8   hal_i2s_mclk_stop_count
+         8   -> __NVIC_DisableIRQ
+       0   mclk_irq_callback
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable8
+       4  ??DataTable8_1
+       4  ??DataTable8_10
+       4  ??DataTable8_11
+       4  ??DataTable8_12
+       4  ??DataTable8_13
+       4  ??DataTable8_14
+       4  ??DataTable8_15
+       4  ??DataTable8_2
+       4  ??DataTable8_3
+       4  ??DataTable8_4
+       4  ??DataTable8_5
+       4  ??DataTable8_6
+       4  ??DataTable8_7
+       4  ??DataTable8_8
+       4  ??DataTable8_9
+      64  NVIC_EncodePriority
+     108  TIM2_IRQHandler
+      38  __NVIC_DisableIRQ
+      30  __NVIC_EnableIRQ
+      10  __NVIC_GetPriorityGrouping
+      44  __NVIC_SetPriority
+      46  hal_i2s_mclk_init
+       6  hal_i2s_mclk_set_sof
+      64  hal_i2s_mclk_start_count
+      24  hal_i2s_mclk_stop_count
+       4  mclk
+       4  mclk_count
+       2  mclk_irq_callback
+       4  sof_count
+       4  sof_max
+
+ 
+  16 bytes in section .bss
+ 500 bytes in section .text
+ 
+ 498 bytes of CODE memory (+ 2 bytes shared)
+  16 bytes of DATA memory
+
+Errors: none
+Warnings: none

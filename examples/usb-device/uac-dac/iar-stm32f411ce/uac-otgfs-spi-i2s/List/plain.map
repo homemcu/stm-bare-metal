@@ -1,0 +1,486 @@
+###############################################################################
+#
+# IAR ELF Linker V8.50.1.245/W32 for ARM                  09/Jan/2021  10:06:45
+# Copyright 2007-2020 IAR Systems AB.
+#
+#    Output file  =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Exe\plain.out
+#    Map file     =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List\plain.map
+#    Command line =
+#        -f C:\Users\18EE~1\AppData\Local\Temp\EWD291.tmp
+#        (C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\hal-i2s-mclk.o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\hal-spi-i2s.o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\hal-usbd-init.o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\main.o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\platform.o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\startup_stm32f411xe.o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\stm32f4xx-hw.o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\system_stm32f4xx.o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\uac-dac-spi-i2s-drv.o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\usb-uac-i2s.o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\usbd_core.o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\usbd_stm32f429_otgfs.o
+#        --no_out_extension -o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Exe\plain.out
+#        --map
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List\plain.map
+#        --config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\config\linker\ST\stm32f411xE.icf" --semihosting --entry
+#        __iar_program_start --redirect __write=__write_buffered --vfe
+#        --text_out locale)
+#
+###############################################################################
+
+*******************************************************************************
+*** RUNTIME MODEL ATTRIBUTES
+***
+
+CppFlavor       = *
+__SystemLibrary = DLib
+__dlib_version  = 6
+
+
+*******************************************************************************
+*** HEAP SELECTION
+***
+
+The basic heap was selected because no calls to memory allocation
+functions were found in the application outside of system library
+functions, and there are calls to deallocation functions in the
+application.
+
+
+*******************************************************************************
+*** PLACEMENT SUMMARY
+***
+
+"A0":  place at address 0x800'0000 { ro section .intvec };
+"P1":  place in [from 0x800'0000 to 0x807'ffff] { ro };
+define block CSTACK with size = 8K, alignment = 8 { };
+define block HEAP with size = 8K, alignment = 8 { };
+"P2":  place in [from 0x2000'0000 to 0x2001'ffff] {
+          rw, block CSTACK, block HEAP };
+initialize by copy { rw };
+
+  Section            Kind         Address    Size  Object
+  -------            ----         -------    ----  ------
+"A0":                                       0x198
+  .intvec            ro code   0x800'0000   0x198  startup_stm32f411xe.o [1]
+                             - 0x800'0198   0x198
+
+"P1":                                      0x25c0
+  .text              ro code   0x800'0198   0x930  usbd_stm32f429_otgfs.o [1]
+  .text              ro code   0x800'0ac8   0x5c0  usb-uac-i2s.o [1]
+  .text              ro code   0x800'1088   0x246  DblDiv.o [3]
+  .text              ro code   0x800'12ce    0x3a  zero_init3.o [4]
+  .text              ro code   0x800'1308   0x1a2  DblMul.o [3]
+  .rodata            const     0x800'14aa    0x36  usb-uac-i2s.o [1]
+  .text              ro code   0x800'14e0    0x28  DblToU32.o [3]
+  .text              ro code   0x800'1508   0x104  hal-usbd-init.o [1]
+  .text              ro code   0x800'160c    0x9e  stm32f4xx-hw.o [1]
+  .text              ro code   0x800'16aa    0x2e  copy_init3.o [4]
+  .text              ro code   0x800'16d8   0x510  usbd_core.o [1]
+  .text              ro code   0x800'1be8   0x346  hal-spi-i2s.o [1]
+  .text              ro code   0x800'1f30    0x5c  uac-dac-spi-i2s-drv.o [1]
+  .text              ro code   0x800'1f8c     0x2  hal-spi-i2s.o [1]
+  .text              ro code   0x800'1f8e     0x2  hal-spi-i2s.o [1]
+  .text              ro code   0x800'1f90   0x1f4  hal-i2s-mclk.o [1]
+  .text              ro code   0x800'2184   0x1e4  platform.o [1]
+  .text              ro code   0x800'2368    0xd8  system_stm32f4xx.o [1]
+  .rodata            const     0x800'2440    0x84  usb-uac-i2s.o [1]
+  .rodata            const     0x800'24c4    0x34  usbd_stm32f429_otgfs.o [1]
+  .text              ro code   0x800'24f8    0x28  data_init.o [4]
+  .rodata            const     0x800'2520    0x24  usb-uac-i2s.o [1]
+  .text              ro code   0x800'2544    0x22  fpinit_M.o [3]
+  .iar.init_table    const     0x800'2568    0x24  - Linker created -
+  .rodata            const     0x800'258c    0x20  uac-dac-spi-i2s-drv.o [1]
+  .text              ro code   0x800'25ac    0x1e  cmain.o [4]
+  .text              ro code   0x800'25ca     0x4  low_level_init.o [2]
+  .text              ro code   0x800'25ce    0x10  main.o [1]
+  .text              ro code   0x800'25de     0x4  exit.o [2]
+  .text              ro code   0x800'25e4     0xa  cexit.o [4]
+  .text              ro code   0x800'25f0    0x14  exit.o [5]
+  .rodata            const     0x800'2604    0x14  usb-uac-i2s.o [1]
+  .rodata            const     0x800'2618    0x10  system_stm32f4xx.o [1]
+  .text              ro code   0x800'2628    0x10  startup_stm32f411xe.o [1]
+  .rodata            const     0x800'2638     0xc  usb-uac-i2s.o [1]
+  .text              ro code   0x800'2644     0xc  cstartup_M.o [4]
+  .rodata            const     0x800'2650     0x4  usb-uac-i2s.o [1]
+  .rodata            const     0x800'2654     0x4  usbd_stm32f429_otgfs.o [1]
+  .rodata            const     0x800'2658     0x4  usbd_stm32f429_otgfs.o [1]
+  .rodata            const     0x800'265c     0x4  usbd_stm32f429_otgfs.o [1]
+  .text              ro code   0x800'2660     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2664     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2668     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'266c     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2670     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2674     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2678     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'267c     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2680     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2684     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2688     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'268c     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2690     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2694     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2698     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'269c     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26a0     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26a4     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26a8     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26ac     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26b0     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26b4     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26b8     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26bc     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26c0     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26c4     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26c8     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26cc     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26d0     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26d4     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26d8     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26dc     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26e0     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26e4     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26e8     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26ec     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26f0     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26f4     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26f8     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'26fc     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2700     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2704     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2708     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'270c     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2710     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2714     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2718     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'271c     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2720     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2724     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2728     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'272c     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2730     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2734     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2738     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'273c     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2740     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2744     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2748     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'274c     0x4  startup_stm32f411xe.o [1]
+  .text              ro code   0x800'2750     0x4  startup_stm32f411xe.o [1]
+  Initializer bytes  const     0x800'2754     0x4  <for P2-1>
+  .rodata            const     0x800'2758     0x0  zero_init3.o [4]
+  .rodata            const     0x800'2758     0x0  copy_init3.o [4]
+                             - 0x800'2758  0x25c0
+
+"P2", part 1 of 3:                            0x4
+  P2-1                        0x2000'0000     0x4  <Init block>
+    .data            inited   0x2000'0000     0x4  system_stm32f4xx.o [1]
+                            - 0x2000'0004     0x4
+
+"P2", part 2 of 3:                          0xdc4
+  .bss               zero     0x2000'0004   0xc40  usb-uac-i2s.o [1]
+  .bss               zero     0x2000'0c44    0x80  usb-uac-i2s.o [1]
+  .bss               zero     0x2000'0cc4    0x64  usb-uac-i2s.o [1]
+  .bss               zero     0x2000'0d28    0x2c  usb-uac-i2s.o [1]
+  .bss               zero     0x2000'0d54    0x20  usb-uac-i2s.o [1]
+  .bss               zero     0x2000'0d74    0x14  usb-uac-i2s.o [1]
+  .bss               zero     0x2000'0d88    0x10  usb-uac-i2s.o [1]
+  .bss               zero     0x2000'0d98     0x4  hal-i2s-mclk.o [1]
+  .bss               zero     0x2000'0da0     0x8  hal-spi-i2s.o [1]
+  .bss               zero     0x2000'0da8     0x4  hal-i2s-mclk.o [1]
+  .bss               zero     0x2000'0dac     0x4  hal-i2s-mclk.o [1]
+  .bss               zero     0x2000'0db0     0x4  hal-i2s-mclk.o [1]
+  .bss               zero     0x2000'0db4     0x4  hal-usbd-init.o [1]
+  .bss               zero     0x2000'0db8     0x4  platform.o [1]
+  .bss               zero     0x2000'0dbc     0x4  uac-dac-spi-i2s-drv.o [1]
+  .bss               zero     0x2000'0dc0     0x4  uac-dac-spi-i2s-drv.o [1]
+  .bss               zero     0x2000'0dc4     0x1  usb-uac-i2s.o [1]
+  .bss               zero     0x2000'0dc5     0x1  usb-uac-i2s.o [1]
+                            - 0x2000'0dc6   0xdc2
+
+"P2", part 3 of 3:                         0x2000
+  CSTACK                      0x2000'0dc8  0x2000  <Block>
+    CSTACK           uninit   0x2000'0dc8  0x2000  <Block tail>
+                            - 0x2000'2dc8  0x2000
+
+Unused ranges:
+
+         From           To      Size
+         ----           --      ----
+   0x800'2758   0x807'ffff  0x7'd8a8
+  0x2000'2dc8  0x2001'ffff  0x1'd238
+
+
+*******************************************************************************
+*** INIT TABLE
+***
+
+          Address      Size
+          -------      ----
+Zero (__iar_zero_init3)
+    1 destination range, total size 0xdc2:
+          0x2000'0004  0xdc2
+
+Copy (__iar_copy_init3)
+    1 source range, total size 0x4:
+           0x800'2754    0x4
+    1 destination range, total size 0x4:
+          0x2000'0000    0x4
+
+
+
+*******************************************************************************
+*** MODULE SUMMARY
+***
+
+    Module                  ro code  ro data  rw data
+    ------                  -------  -------  -------
+command line/config:
+    -------------------------------------------------
+    Total:
+
+C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj: [1]
+    hal-i2s-mclk.o              500                16
+    hal-spi-i2s.o               842                 8
+    hal-usbd-init.o             260                 4
+    main.o                       16
+    platform.o                  484                 4
+    startup_stm32f411xe.o       668
+    stm32f4xx-hw.o              158
+    system_stm32f4xx.o          216       20        4
+    uac-dac-spi-i2s-drv.o        92       32        8
+    usb-uac-i2s.o             1'472      258    3'478
+    usbd_core.o               1'296
+    usbd_stm32f429_otgfs.o    2'352       64
+    -------------------------------------------------
+    Total:                    8'356      374    3'522
+
+dl7M_tln.a: [2]
+    exit.o                        4
+    low_level_init.o              4
+    -------------------------------------------------
+    Total:                        8
+
+m7M_tls.a: [3]
+    DblDiv.o                    582
+    DblMul.o                    418
+    DblToU32.o                   40
+    fpinit_M.o                   34
+    -------------------------------------------------
+    Total:                    1'074
+
+rt7M_tl.a: [4]
+    cexit.o                      10
+    cmain.o                      30
+    copy_init3.o                 46
+    cstartup_M.o                 12
+    data_init.o                  40
+    zero_init3.o                 58
+    -------------------------------------------------
+    Total:                      196
+
+shb_l.a: [5]
+    exit.o                       20
+    -------------------------------------------------
+    Total:                       20
+
+    Gaps                          6        2        4
+    Linker created                        36    8'192
+-----------------------------------------------------
+    Grand Total:              9'660      412   11'718
+
+
+*******************************************************************************
+*** ENTRY LIST
+***
+
+Entry                       Address   Size  Type      Object
+-----                       -------   ----  ----      ------
+.iar.init_table$$Base    0x800'2568          --   Gb  - Linker created -
+.iar.init_table$$Limit   0x800'258c          --   Gb  - Linker created -
+?main                    0x800'25ad         Code  Gb  cmain.o [4]
+AHBPrescTable            0x800'2618   0x10  Data  Gb  system_stm32f4xx.o [1]
+CSTACK$$Base            0x2000'0dc8          --   Gb  - Linker created -
+CSTACK$$Limit           0x2000'2dc8          --   Gb  - Linker created -
+DMA1_Stream3_IRQHandler
+                         0x800'1e5b   0x5e  Code  Gb  hal-spi-i2s.o [1]
+DMA1_Stream4_IRQHandler
+                         0x800'1dfd   0x5e  Code  Gb  hal-spi-i2s.o [1]
+DWTInit                  0x800'22c1   0x1c  Code  Lc  platform.o [1]
+EPFIFO                   0x800'0199    0xc  Code  Lc  usbd_stm32f429_otgfs.o [1]
+EPIN                     0x800'01a5    0xc  Code  Lc  usbd_stm32f429_otgfs.o [1]
+EPOUT                    0x800'01b1    0xc  Code  Lc  usbd_stm32f429_otgfs.o [1]
+Flush_RX                 0x800'01bd   0x1a  Code  Lc  usbd_stm32f429_otgfs.o [1]
+Flush_TX                 0x800'01d7   0x2a  Code  Lc  usbd_stm32f429_otgfs.o [1]
+NVIC_EncodePriority      0x800'200b   0x40  Code  Lc  hal-i2s-mclk.o [1]
+NVIC_EncodePriority      0x800'1c45   0x40  Code  Lc  hal-spi-i2s.o [1]
+NVIC_EncodePriority      0x800'155d   0x40  Code  Lc  hal-usbd-init.o [1]
+NVIC_EncodePriority      0x800'21d9   0x40  Code  Lc  platform.o [1]
+OTG                      0x800'2654    0x4  Data  Lc  usbd_stm32f429_otgfs.o [1]
+OTGD                     0x800'2658    0x4  Data  Lc  usbd_stm32f429_otgfs.o [1]
+OTGPCTL                  0x800'265c    0x4  Data  Lc  usbd_stm32f429_otgfs.o [1]
+OTG_FS_IRQHandler        0x800'15e5    0xc  Code  Gb  hal-usbd-init.o [1]
+Region$$Table$$Base      0x800'2568          --   Gb  - Linker created -
+Region$$Table$$Limit     0x800'258c          --   Gb  - Linker created -
+SetSysClock              0x800'2253   0x6e  Code  Lc  platform.o [1]
+SysTick_Config           0x800'2219   0x30  Code  Lc  platform.o [1]
+SysTick_Handler          0x800'2249    0xa  Code  Gb  platform.o [1]
+SystemCoreClock         0x2000'0000    0x4  Data  Gb  system_stm32f4xx.o [1]
+SystemCoreClockUpdate    0x800'237d   0xa2  Code  Gb  system_stm32f4xx.o [1]
+SystemInit               0x800'2369   0x14  Code  Gb  system_stm32f4xx.o [1]
+TIM2_IRQHandler          0x800'20d7   0x6c  Code  Gb  hal-i2s-mclk.o [1]
+__NVIC_DisableIRQ        0x800'1fb9   0x26  Code  Lc  hal-i2s-mclk.o [1]
+__NVIC_EnableIRQ         0x800'1f9b   0x1e  Code  Lc  hal-i2s-mclk.o [1]
+__NVIC_EnableIRQ         0x800'1bf5   0x20  Code  Lc  hal-spi-i2s.o [1]
+__NVIC_EnableIRQ         0x800'1513   0x1e  Code  Lc  hal-usbd-init.o [1]
+__NVIC_GetPriorityGrouping
+                         0x800'1f91    0xa  Code  Lc  hal-i2s-mclk.o [1]
+__NVIC_GetPriorityGrouping
+                         0x800'1be9    0xc  Code  Lc  hal-spi-i2s.o [1]
+__NVIC_GetPriorityGrouping
+                         0x800'1509    0xa  Code  Lc  hal-usbd-init.o [1]
+__NVIC_GetPriorityGrouping
+                         0x800'21a3    0xa  Code  Lc  platform.o [1]
+__NVIC_SetPriority       0x800'1fdf   0x2c  Code  Lc  hal-i2s-mclk.o [1]
+__NVIC_SetPriority       0x800'1c15   0x30  Code  Lc  hal-spi-i2s.o [1]
+__NVIC_SetPriority       0x800'1531   0x2c  Code  Lc  hal-usbd-init.o [1]
+__NVIC_SetPriority       0x800'21ad   0x2c  Code  Lc  platform.o [1]
+__NVIC_SetPriorityGrouping
+                         0x800'2185   0x1e  Code  Lc  platform.o [1]
+__aeabi_d2uiz            0x800'14e1         Code  Gb  DblToU32.o [3]
+__aeabi_ddiv             0x800'1089         Code  Gb  DblDiv.o [3]
+__aeabi_dmul             0x800'1309         Code  Gb  DblMul.o [3]
+__cmain                  0x800'25ad         Code  Gb  cmain.o [4]
+__exit                   0x800'25f1   0x14  Code  Gb  exit.o [5]
+__iar_copy_init3         0x800'16ab   0x2e  Code  Gb  copy_init3.o [4]
+__iar_data_init3         0x800'24f9   0x28  Code  Gb  data_init.o [4]
+__iar_init_vfp           0x800'2545         Code  Gb  fpinit_M.o [3]
+__iar_program_start      0x800'2645         Code  Gb  cstartup_M.o [4]
+__iar_zero_init3         0x800'12cf   0x3a  Code  Gb  zero_init3.o [4]
+__low_level_init         0x800'25cb    0x4  Code  Gb  low_level_init.o [2]
+__vector_table           0x800'0000         Data  Gb  startup_stm32f411xe.o [1]
+_call_main               0x800'25b9         Code  Gb  cmain.o [4]
+_exit                    0x800'25e5         Code  Gb  cexit.o [4]
+_main                    0x800'25c7         Code  Gb  cmain.o [4]
+altset_num              0x2000'0dc5    0x1  Data  Lc  usb-uac-i2s.o [1]
+audio                   0x2000'0d74   0x14  Data  Lc  usb-uac-i2s.o [1]
+audio_out_drv            0x800'258c   0x20  Data  Gb  uac-dac-spi-i2s-drv.o [1]
+buff_uac_ctrl           0x2000'0d88   0x10  Data  Lc  usb-uac-i2s.o [1]
+buff_usb                0x2000'0004  0xc40  Data  Lc  usb-uac-i2s.o [1]
+buff_usb_size           0x2000'0d54   0x20  Data  Lc  usb-uac-i2s.o [1]
+config_desc              0x800'2440   0x84  Data  Lc  usb-uac-i2s.o [1]
+connect                  0x800'038d   0x50  Code  Lc  usbd_stm32f429_otgfs.o [1]
+convert32to32            0x800'1f81    0xc  Code  Lc  uac-dac-spi-i2s-drv.o [1]
+counter                 0x2000'0db8    0x4  Data  Lc  platform.o [1]
+device_desc              0x800'2604   0x14  Data  Lc  usb-uac-i2s.o [1]
+dtable                   0x800'2638    0xc  Data  Lc  usb-uac-i2s.o [1]
+enable                   0x800'02c1   0xcc  Code  Lc  usbd_stm32f429_otgfs.o [1]
+ep_config                0x800'046f  0x18c  Code  Lc  usbd_stm32f429_otgfs.o [1]
+ep_deconfig              0x800'05fb   0xa0  Code  Lc  usbd_stm32f429_otgfs.o [1]
+ep_isstalled             0x800'0291   0x30  Code  Lc  usbd_stm32f429_otgfs.o [1]
+ep_read                  0x800'069b   0x76  Code  Lc  usbd_stm32f429_otgfs.o [1]
+ep_setstall              0x800'0223   0x6e  Code  Lc  usbd_stm32f429_otgfs.o [1]
+ep_write                 0x800'0711   0xae  Code  Lc  usbd_stm32f429_otgfs.o [1]
+evt_poll                 0x800'07cd  0x230  Code  Lc  usbd_stm32f429_otgfs.o [1]
+exit                     0x800'25df    0x4  Code  Gb  exit.o [2]
+feedback                0x2000'0d28   0x2c  Data  Lc  usb-uac-i2s.o [1]
+fnv1a32_turn             0x800'09fd   0x18  Code  Lc  usbd_stm32f429_otgfs.o [1]
+get_frame                0x800'07bf    0xe  Code  Lc  usbd_stm32f429_otgfs.o [1]
+get_serialno_desc        0x800'0a15   0x64  Code  Lc  usbd_stm32f429_otgfs.o [1]
+getinfo                  0x800'0201   0x22  Code  Lc  usbd_stm32f429_otgfs.o [1]
+hal_i2s_mclk_init        0x800'204b   0x2e  Code  Gb  hal-i2s-mclk.o [1]
+hal_i2s_mclk_set_sof     0x800'2079    0x6  Code  Gb  hal-i2s-mclk.o [1]
+hal_i2s_mclk_start_count
+                         0x800'207f   0x40  Code  Gb  hal-i2s-mclk.o [1]
+hal_i2s_mclk_stop_count
+                         0x800'20bf   0x18  Code  Gb  hal-i2s-mclk.o [1]
+hal_spi_i2s_config       0x800'1cf1   0x58  Code  Gb  hal-spi-i2s.o [1]
+hal_spi_i2s_get_mclk     0x800'1d49    0xa  Code  Gb  hal-spi-i2s.o [1]
+hal_spi_i2s_init         0x800'1c85   0x6a  Code  Gb  hal-spi-i2s.o [1]
+hal_spi_i2s_init_dma_tx_buf
+                         0x800'1d53   0x4a  Code  Gb  hal-spi-i2s.o [1]
+hal_spi_i2s_tx_irq_tcif_callback
+                         0x800'1f51    0xa  Code  Gb  uac-dac-spi-i2s-drv.o [1]
+hal_spi_i2s_write_dma_buf
+                         0x800'1d9d   0x58  Code  Gb  hal-spi-i2s.o [1]
+hw_cfg_pin               0x800'160d   0x9e  Code  Gb  stm32f4xx-hw.o [1]
+i2s_mclk                0x2000'0da0    0x8  Data  Lc  hal-spi-i2s.o [1]
+i2s_tx_complete_callback
+                         0x800'0f15   0x4e  Code  Lc  usb-uac-i2s.o [1]
+iface_num               0x2000'0dc4    0x1  Data  Lc  usb-uac-i2s.o [1]
+init                     0x800'1f3f   0x12  Code  Lc  uac-dac-spi-i2s-drv.o [1]
+init_dma_txbuf           0x800'1f31    0xe  Code  Lc  uac-dac-spi-i2s-drv.o [1]
+lang_desc                0x800'2650    0x4  Data  Lc  usb-uac-i2s.o [1]
+main                     0x800'25cf   0x10  Code  Gb  main.o [1]
+manuf_desc_en            0x800'14aa   0x36  Data  Lc  usb-uac-i2s.o [1]
+mclk                    0x2000'0d98    0x4  Data  Lc  hal-i2s-mclk.o [1]
+mclk_callback           0x2000'0dc0    0x4  Data  Lc  uac-dac-spi-i2s-drv.o [1]
+mclk_callback            0x800'0b8b   0xb0  Code  Lc  usb-uac-i2s.o [1]
+mclk_count              0x2000'0da8    0x4  Data  Lc  hal-i2s-mclk.o [1]
+mclk_irq_callback        0x800'1f69    0xe  Code  Gb  uac-dac-spi-i2s-drv.o [1]
+mclk_start_count         0x800'1f5b    0xe  Code  Lc  uac-dac-spi-i2s-drv.o [1]
+platform_init            0x800'22dd   0x3c  Code  Gb  platform.o [1]
+prod_desc_en             0x800'2520   0x24  Data  Lc  usb-uac-i2s.o [1]
+set_tx_fifo              0x800'03f7   0x78  Code  Lc  usbd_stm32f429_otgfs.o [1]
+setaddr                  0x800'03dd   0x1a  Code  Lc  usbd_stm32f429_otgfs.o [1]
+sof_count               0x2000'0db0    0x4  Data  Lc  hal-i2s-mclk.o [1]
+sof_max                 0x2000'0dac    0x4  Data  Lc  hal-i2s-mclk.o [1]
+start_mclk_count         0x800'0c3b   0x4a  Code  Lc  usb-uac-i2s.o [1]
+stop_mclk_count          0x800'0c85   0x14  Code  Lc  usb-uac-i2s.o [1]
+tx_irq_tcif_callback    0x2000'0dbc    0x4  Data  Lc  uac-dac-spi-i2s-drv.o [1]
+uac_callback             0x800'0e61   0xb4  Code  Lc  usb-uac-i2s.o [1]
+uac_control              0x800'0d8f   0xd2  Code  Lc  usb-uac-i2s.o [1]
+uac_feature_control      0x800'0cfd   0x92  Code  Lc  usb-uac-i2s.o [1]
+uac_getdesc              0x800'0c99   0x64  Code  Lc  usb-uac-i2s.o [1]
+uac_setconf              0x800'0f63   0x72  Code  Lc  usb-uac-i2s.o [1]
+ubuf                    0x2000'0c44   0x80  Data  Lc  usb-uac-i2s.o [1]
+udev                    0x2000'0db4    0x4  Data  Lc  hal-usbd-init.o [1]
+udev                    0x2000'0cc4   0x64  Data  Lc  usb-uac-i2s.o [1]
+usb_uac_i2s_init         0x800'0fd5   0x40  Code  Gb  usb-uac-i2s.o [1]
+usb_uac_i2s_loop         0x800'1015   0x16  Code  Gb  usb-uac-i2s.o [1]
+usbd_configure           0x800'1755   0x38  Code  Lc  usbd_core.o [1]
+usbd_connect             0x800'0b79   0x12  Code  Lc  usb-uac-i2s.o [1]
+usbd_enable              0x800'0b67   0x12  Code  Lc  usb-uac-i2s.o [1]
+usbd_ep_config           0x800'0aef   0x1e  Code  Lc  usb-uac-i2s.o [1]
+usbd_ep_deconfig         0x800'0b0d   0x12  Code  Lc  usb-uac-i2s.o [1]
+usbd_ep_read             0x800'0b4b   0x1c  Code  Lc  usb-uac-i2s.o [1]
+usbd_ep_write            0x800'0b2f   0x1c  Code  Lc  usb-uac-i2s.o [1]
+usbd_getinfo             0x800'16d9    0xc  Code  Lc  usbd_core.o [1]
+usbd_hw_init             0x800'159d   0x48  Code  Gb  hal-usbd-init.o [1]
+usbd_init                0x800'0ac9   0x1a  Code  Lc  usb-uac-i2s.o [1]
+usbd_otgfs               0x800'24c4   0x34  Data  Gb  usbd_stm32f429_otgfs.o [1]
+usbd_poll                0x800'1bcf   0x10  Code  Gb  usbd_core.o [1]
+usbd_process_callback    0x800'173d   0x18  Code  Lc  usbd_core.o [1]
+usbd_process_devrq       0x800'178d   0xa8  Code  Lc  usbd_core.o [1]
+usbd_process_ep0         0x800'1b1d   0x3e  Code  Lc  usbd_core.o [1]
+usbd_process_eprx        0x800'19b3  0x168  Code  Lc  usbd_core.o [1]
+usbd_process_eptrq       0x800'184d   0x56  Code  Lc  usbd_core.o [1]
+usbd_process_eptx        0x800'1925   0x8e  Code  Lc  usbd_core.o [1]
+usbd_process_evt         0x800'1b5b   0x74  Code  Lc  usbd_core.o [1]
+usbd_process_intrq       0x800'1835   0x18  Code  Lc  usbd_core.o [1]
+usbd_process_request     0x800'18a3   0x5a  Code  Lc  usbd_core.o [1]
+usbd_process_reset       0x800'16e5   0x36  Code  Lc  usbd_core.o [1]
+usbd_reg_config          0x800'0ae7    0x4  Code  Lc  usb-uac-i2s.o [1]
+usbd_reg_control         0x800'0ae3    0x4  Code  Lc  usb-uac-i2s.o [1]
+usbd_reg_descr           0x800'0aeb    0x4  Code  Lc  usb-uac-i2s.o [1]
+usbd_reg_endpoint        0x800'0b1f   0x10  Code  Lc  usb-uac-i2s.o [1]
+usbd_set_address         0x800'171b   0x22  Code  Lc  usbd_core.o [1]
+usbd_stall_pid           0x800'18fd   0x28  Code  Lc  usbd_core.o [1]
+
+
+[1] = C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj
+[2] = dl7M_tln.a
+[3] = m7M_tls.a
+[4] = rt7M_tl.a
+[5] = shb_l.a
+
+   9'660 bytes of readonly  code memory
+     412 bytes of readonly  data memory
+  11'718 bytes of readwrite data memory
+
+Errors: none
+Warnings: none

@@ -1,0 +1,259 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V8.50.1.245/W32 for ARM         09/Jan/2021  10:06:22
+# Copyright 1999-2020 IAR Systems AB.
+#
+#    Cpu mode             
+#    Endian            =  little
+#    Source file       =
+#        C:\Programming\Microcontrollers\Devices\platform\stm32f411ce\platform.c
+#    Command line      =
+#        -f C:\Users\18EE~1\AppData\Local\Temp\EW78B1.tmp
+#        (C:\Programming\Microcontrollers\Devices\platform\stm32f411ce\platform.c
+#        -D STM32F411xE -D HSE_VALUE=25000000 -D USBD_OTGFS --preprocess=s
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -lcN
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List
+#        -o
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj
+#        --no_cse --no_unroll --no_inline --no_code_motion --no_tbaa
+#        --no_clustering --no_scheduling --debug --endian=little
+#        --cpu=Cortex-M4 -e --fpu=VFPv4_sp --dlib_config "C:\Program Files
+#        (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\inc\c\DLib_Config_Normal.h" -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\src\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\hal\inc\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\drv\audio-out\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\class\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\lib\usbd\uac-dac\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\cpu\stm32f411ce\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\platform\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\core\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\cmsis\device\ST\STM32F4xx\Include\
+#        -I
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\..\..\..\..\3rd-party\drivers\libusb_stm32\inc\
+#        -On)
+#    Locale            =  C
+#    List file         =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\List\platform.lst
+#    Object file       =
+#        C:\Programming\Microcontrollers\Devices\apps\usb-device\uac-dac\iar-stm32f411ce\uac-otgfs-spi-i2s\Obj\platform.o
+#    Runtime model:       
+#      __SystemLibrary =  DLib
+#      __dlib_version  =  6
+#
+###############################################################################
+
+C:\Programming\Microcontrollers\Devices\platform\stm32f411ce\platform.c
+      1          /*
+      2          * Copyright (c) 2020 Vladimir Alemasov
+      3          * All rights reserved
+      4          *
+      5          * This program and the accompanying materials are distributed under 
+      6          * the terms of GNU General Public License version 2 
+      7          * as published by the Free Software Foundation.
+      8          *
+      9          * This program is distributed in the hope that it will be useful,
+     10          * but WITHOUT ANY WARRANTY; without even the implied warranty of
+     11          * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     12          * GNU General Public License for more details.
+     13          */
+     14          
+     15          #include "cpu.h"
+     16          #include "stm32f4xx-hw.h"
+     17          
+     18          static volatile uint32_t counter = 0;
+     19          
+     20          //--------------------------------------------
+     21          // SysTick timer interruption handler
+     22          void SysTick_Handler(void)
+     23          {
+     24          	counter++;
+     25          }
+     26          
+     27          //--------------------------------------------
+     28          void delay_ms(uint32_t delay_ms)
+     29          {
+     30          	uint32_t start;
+     31          	start = counter;
+     32          	while ((counter - start) < delay_ms);
+     33          }
+     34          
+     35          //--------------------------------------------
+     36          uint32_t get_platform_counter(void)
+     37          {
+     38          	return counter;
+     39          }
+     40          
+     41          //--------------------------------------------
+     42          void delay_us(uint32_t delay_us)
+     43          {
+     44          	uint32_t start;
+     45          	start = DWT->CYCCNT;
+     46          	delay_us *= (SystemCoreClock / 1000000);
+     47          	while ((DWT->CYCCNT - start) < delay_us);
+     48          }
+     49          
+     50          //--------------------------------------------
+     51          // HSE crystal oscillator 25 MHz
+     52          // Define HSE_VALUE=25000000 in Makefile(GCC ARM) or Preprocessor tab(IAR)
+     53          // fHSE = 25 MHz (HSE)
+     54          // fSYSCLK = 96 MHz (SYSCLK)
+     55          // fHCLK = 96 MHz (AHB)
+     56          // fPCLK1 = 48 MHz (APB1)
+     57          // fPCLK2 = 96 MHz (APB2)
+     58          #define PLL_M      25
+     59          #define PLL_N      192
+     60          #define PLL_P      2
+     61          #define PLL_Q      4
+     62          static void SetSysClock(void)
+     63          {
+     64          	// HSE clock enable
+     65          	RCC->CR |= RCC_CR_HSEON;
+     66          	while (!(RCC->CR & RCC_CR_HSERDY));
+     67          
+     68          	// Power interface clock enable
+     69          	RCC->APB1ENR |= RCC_APB1ENR_PWREN;
+     70          	// Scale 1 mode <= 100 MHz
+     71          	// the device can operate at the maximum frequency 100 MHz
+     72          	PWR->CR |= PWR_CR_VOS_0 | PWR_CR_VOS_1;
+     73          //	while (!(PWR->CSR & PWR_CSR_VOSRDY));
+     74          
+     75          	// AHB = SYSCLK / 1
+     76          	RCC->CFGR |= RCC_CFGR_HPRE_DIV1;
+     77          
+     78          	// APB1 = AHB / 2
+     79          	RCC->CFGR |= RCC_CFGR_PPRE1_DIV2;
+     80          
+     81          	// APB2 = AHB / 1
+     82          	RCC->CFGR |= RCC_CFGR_PPRE2_DIV1;
+     83          
+     84          	// configure the main PLL
+     85          	// SYSCLK = HSE / PLL_M * PLL_N / PLL_P
+     86          	RCC->PLLCFGR = (PLL_M << RCC_PLLCFGR_PLLM_Pos) |
+     87          		           (PLL_N << RCC_PLLCFGR_PLLN_Pos) |
+     88          		           (((PLL_P >> 1) - 1) << RCC_PLLCFGR_PLLP_Pos) |
+     89          		           (PLL_Q << RCC_PLLCFGR_PLLQ_Pos) |
+     90          		           RCC_PLLCFGR_PLLSRC_HSE;
+     91          
+     92          	// enable the main PLL
+     93          	RCC->CR |= RCC_CR_PLLON;
+     94          	while (!(RCC->CR & RCC_CR_PLLRDY));
+     95          
+     96          	// configure Flash prefetch, Instruction cache, Data cache and wait state
+     97          	// Table 5. Number of wait states according to CPU clock (HCLK) frequency
+     98          	FLASH->ACR = FLASH_ACR_PRFTEN | FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_LATENCY_3WS;
+     99          
+    100          	// select the main PLL as system clock source
+    101          	RCC->CFGR &= ~RCC_CFGR_SW;
+    102          	RCC->CFGR |= RCC_CFGR_SW_PLL;
+    103          	while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL);
+    104          }
+    105          
+    106          //--------------------------------------------
+    107          static void DWTInit(void)
+    108          {
+    109          	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    110          	DWT->CYCCNT = 0;
+    111          	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk; 
+    112          }
+    113          
+    114          //--------------------------------------------
+    115          void platform_init(void)
+    116          {
+    117          #if 1
+    118          	// Number of group priorities: 16
+    119          	// Number of sub priorities: none
+    120          	// All the priority bits are the preempt priority bits only
+    121          	NVIC_SetPriorityGrouping(3);
+    122          #endif
+    123          	SetSysClock();
+    124          	SystemCoreClockUpdate();
+    125          	SysTick_Config(SystemCoreClock / 1000);
+    126          	// Changing the SysTick_IRQn priority level in the new group
+    127          	NVIC_SetPriority(SysTick_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(), 0, 0));
+    128          	DWTInit();
+    129          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   DWTInit
+      12   NVIC_EncodePriority
+       0   SetSysClock
+       8   SysTick_Config
+         8   -> __NVIC_SetPriority
+       0   SysTick_Handler
+       0   __NVIC_GetPriorityGrouping
+       4   __NVIC_SetPriority
+       4   __NVIC_SetPriorityGrouping
+       0   delay_ms
+       4   delay_us
+       0   get_platform_counter
+       8   platform_init
+         8   -> DWTInit
+         8   -> NVIC_EncodePriority
+         8   -> SetSysClock
+         8   -> SysTick_Config
+         8   -> SystemCoreClockUpdate
+         8   -> __NVIC_GetPriorityGrouping
+         8   -> __NVIC_SetPriority
+         8   -> __NVIC_SetPriorityGrouping
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable10
+       4  ??DataTable10_1
+       4  ??DataTable10_10
+       4  ??DataTable10_11
+       4  ??DataTable10_12
+       4  ??DataTable10_13
+       4  ??DataTable10_14
+       4  ??DataTable10_15
+       4  ??DataTable10_16
+       4  ??DataTable10_17
+       4  ??DataTable10_18
+       4  ??DataTable10_19
+       4  ??DataTable10_2
+       4  ??DataTable10_3
+       4  ??DataTable10_4
+       4  ??DataTable10_5
+       4  ??DataTable10_6
+       4  ??DataTable10_7
+       4  ??DataTable10_8
+       4  ??DataTable10_9
+      28  DWTInit
+      64  NVIC_EncodePriority
+     110  SetSysClock
+      48  SysTick_Config
+      10  SysTick_Handler
+      10  __NVIC_GetPriorityGrouping
+      44  __NVIC_SetPriority
+      30  __NVIC_SetPriorityGrouping
+       4  counter
+      14  delay_ms
+      30  delay_us
+       6  get_platform_counter
+      60  platform_init
+
+ 
+   4 bytes in section .bss
+ 534 bytes in section .text
+ 
+ 534 bytes of CODE memory
+   4 bytes of DATA memory
+
+Errors: none
+Warnings: none
